@@ -19,8 +19,8 @@ class ARPPacket(object):
         self.gateway_ip = socket.inet_aton(gateway_ip)
         self.victim_ip = socket.inet_aton(victim_ip)
 
-        for attr in attacker_mac, gateway_mac, victim_mac:
-            setattr(self, attr, self._hexlify_mac(attr))
+        for mac_addr in attacker_mac, gateway_mac, victim_mac:
+            setattr(self, mac_addr, self._mac_to_hex(mac_addr))
 
         ETHER_T = r'\x08\x06'  # Ethertype code of ARP
         self.gateway_eth_header = self.gateway_mac + self.attacker_mac + ETHER_T
@@ -49,7 +49,7 @@ class ARPPacket(object):
         self._arp_header = arp_header
 
     @staticmethod
-    def _hexlify_mac(mac_addr: str) -> str:
+    def _mac_to_hex(mac_addr: str) -> str:
         """
         Transform a MAC address string from IEEE 802 standard to a
         sequence of hexadecimal bytes.
