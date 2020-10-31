@@ -30,6 +30,24 @@ class ARPPacket(object):
         self.gateway_arp_packet = None
         self.victim_arp_packet = None
 
+    @property
+    def arp_header(self):
+        return self._arp_header
+
+    @arp_header.setter
+    def arp_header(self, fields):
+        if fields is None:            # ARP header field structure
+            hdwr_addr = r'\x00\x01'   # '\x00\x01' = Ethernet
+            proto_addr = r'\x08\x00'  # '\x08\x00' = IP
+            hdwr_addr_len = r'\x06'
+            proto_addr_len = r'\x04'
+            opcode = r'\x00\x02'      # '\x00\x02' = REPLY
+            arp_header = r''.join((hdwr_addr, proto_addr, hdwr_addr_len,
+                                   proto_addr_len, opcode))
+        else:
+            arp_header = r''.join(*fields)
+        self._arp_header = arp_header
+
     @staticmethod
     def _hexlify_mac(mac_addr: str) -> str:
         """
