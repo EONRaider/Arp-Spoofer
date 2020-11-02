@@ -112,7 +112,11 @@ def spoof(args):
                        target_mac=args.targetmac,
                        gateway_ip=args.gateip,
                        target_ip=args.targetip)
-    spoofer = Spoofer(args.interface, *packet.get_packets())
+    gate_arp_pkt, target_arp_pkt = packet.get_packets()
+    spoofer = Spoofer(interface=args.interface,
+                      gateway_arp_packet=gate_arp_pkt,
+                      target_arp_packet=target_arp_pkt,
+                      interval=args.interval)
     spoofer.execute()
 
 
@@ -135,5 +139,10 @@ if __name__ == '__main__':
                         help='IP address currently assigned to the gateway.')
     parser.add_argument('--targetip', type=str, required=True, metavar='IP',
                         help='IP address currently assigned to the target.')
+    parser.add_argument('--interval', type=float, default=0.5,
+                        metavar='SECONDS',
+                        help='Time to wait between transmission of each set of '
+                             'ARP Cache Poisoning attack packets (defaults to '
+                             '0.5 seconds).')
     cli_args = parser.parse_args()
     spoof(cli_args)
