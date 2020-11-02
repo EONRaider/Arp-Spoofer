@@ -83,21 +83,22 @@ class Spoofer(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Execute ARP cache poisoning attacks (a.k.a "ARP '
-                    'spoofing") on local networks.')
+        description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
+                    'Spoofing") on local networks.')
     parser.add_argument('interface', type=str,
                         help='Interface on the attacker machine to '
                              'send/receive packets from.')
-    parser.add_argument('--attacker-mac', type=str, required=True,
-                        help='MAC address of the network interface controller '
-                             'used by the attacker.')
-    parser.add_argument('--gate-mac', type=str, required=True,
-                        help='MAC address of the network interface controller '
-                             'of the gateway.')
-    parser.add_argument('--victim-mac', type=str, required=True,
-                        help='MAC address of the network interface controller '
-                             'of the victim.')
-    parser.add_argument('--gate-ip', type=str, required=True,
-                        help='IP address of the gateway.')
-    parser.add_argument('--victim-ip', type=str, required=True,
-                        help='IP address of the victim.')
+    parser.add_argument('--attackermac', type=str, required=True, metavar='MAC',
+                        help='MAC address of the Network Interface Controller '
+                             '(NIC) used by the attacker.')
+    parser.add_argument('--gatemac', type=str, required=True, metavar='MAC',
+                        help='MAC address of the NIC associated to the '
+                             'gateway.')
+    parser.add_argument('--targetmac', type=str, required=True, metavar='MAC',
+                        help='MAC address of the NIC associated to the target.')
+    parser.add_argument('--gateip', type=str, required=True, metavar='IP',
+                        help='IP address currently assigned to the gateway.')
+    parser.add_argument('--targetip', type=str, required=True, metavar='IP',
+                        help='IP address currently assigned to the target.')
+    cli_args = parser.parse_args()
+    spoof(cli_args)
