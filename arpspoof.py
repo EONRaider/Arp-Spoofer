@@ -54,13 +54,14 @@ class ARPPacket(object):
         self._arp_header = arp_header
 
     @staticmethod
-    def _mac_to_hex(mac_addr: str) -> str:
+    def _mac_to_hex(mac_addr: str) -> bytes:
         """
-        Transform a MAC address string from IEEE 802 standard to a
-        sequence of hexadecimal bytes.
-        Ex: 'AB:BC:CD:12:23:34' to '\xAB\xBC\xCD\x12\x23\x34'.
+        Transform a MAC address string from IEEE 802.3 standard to a
+        byte sequence of hexadecimal values.
+        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12#4'
         """
-        return re.sub(r'^|[:-]', r'\\x', mac_addr)
+        return b''.join(bytes.fromhex(octet) for octet in
+                        re.split('[:-]', mac_addr))
 
     def get_packets(self) -> tuple:
         self.gateway_arp_packet = r''.join((self.gateway_eth_header,
