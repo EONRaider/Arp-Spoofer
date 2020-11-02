@@ -32,20 +32,25 @@ class ARPPacket(object):
 
     @property
     def arp_header(self):
+        """
+        Gets a byte-string representation of the ARP header of a packet.
+        Sets the ARP header of a packet as defined by RFC 826.
+        """
         return self._arp_header
 
     @arp_header.setter
     def arp_header(self, fields):
-        if fields is None:            # ARP header field structure
-            hdwr_addr = r'\x00\x01'   # '\x00\x01' = Ethernet
-            proto_addr = r'\x08\x00'  # '\x08\x00' = IP
-            hdwr_addr_len = r'\x06'
-            proto_addr_len = r'\x04'
-            opcode = r'\x00\x02'      # '\x00\x02' = REPLY
-            arp_header = r''.join((hdwr_addr, proto_addr, hdwr_addr_len,
-                                   proto_addr_len, opcode))
+        if fields is None:                  # ARP header field structure
+            hardware_address = b'\x00\x01'  # '\x00\x01' = Ethernet
+            protocol_address = b'\x08\x00'  # '\x08\x00' = IP
+            hardware_address_len = b'\x06'
+            protocol_address_len = b'\x04'
+            opcode = b'\x00\x02'            # '\x00\x02' = REPLY
+            arp_header = b''.join((hardware_address, protocol_address,
+                                   hardware_address_len, protocol_address_len,
+                                   opcode))
         else:
-            arp_header = r''.join(*fields)
+            arp_header = b''.join(*fields)
         self._arp_header = arp_header
 
     @staticmethod
