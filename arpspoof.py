@@ -64,19 +64,19 @@ class ARPPacket(object):
                         re.split('[:-]', mac_addr))
 
     def get_packets(self) -> tuple:
-        self.gateway_arp_packet = r''.join((self.gateway_eth_header,
+        self.gateway_arp_packet = b''.join((self.gateway_eth_header,
                                             self.arp_header,
                                             self.attacker_mac,
-                                            self.victim_ip,
+                                            self.target_ip,
                                             self.gateway_mac,
                                             self.gateway_ip))
-        self.victim_arp_packet = r''.join((self.victim_eth_header,
+        self.target_arp_packet = b''.join((self.target_eth_header,
                                            self.arp_header,
                                            self.attacker_mac,
                                            self.gateway_ip,
-                                           self.victim_mac,
-                                           self.victim_ip))
-        return self.gateway_arp_packet, self.victim_arp_packet
+                                           self.target_mac,
+                                           self.target_ip))
+        return self.gateway_arp_packet, self.target_arp_packet
 
 
 class Spoofer(object):
