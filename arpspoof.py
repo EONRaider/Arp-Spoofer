@@ -82,10 +82,10 @@ class ARPPacket(object):
 
 class Spoofer(object):
     def __init__(self,
-                 interface: str,
+                 interface: str, *,
                  gateway_arp_packet: bytes,
-                 target_arp_packet: bytes, *,
-                 interval: float = 0.5):
+                 target_arp_packet: bytes,
+                 interval: float):
         self.interface = interface
         self.gateway_arp_pkt = gateway_arp_packet
         self.target_arp_pkt = target_arp_packet
