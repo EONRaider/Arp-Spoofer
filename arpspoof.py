@@ -20,15 +20,15 @@ class ARPPacket(object):
                  gateway_ip: str, target_ip: str):
         self.gateway_ip = inet_aton(gateway_ip)
         self.target_ip = inet_aton(target_ip)
-        self.attacker_mac = self._mac_to_hex(attacker_mac)
-        self.gateway_mac = self._mac_to_hex(gateway_mac)
-        self.target_mac = self._mac_to_hex(target_mac)
+        self.attacker_mac = self.__mac_to_hex(attacker_mac)
+        self.gateway_mac = self.__mac_to_hex(gateway_mac)
+        self.target_mac = self.__mac_to_hex(target_mac)
 
     def __iter__(self):
         yield from (self.arp_pkt_to_gateway, self.arp_pkt_to_target)
 
     @staticmethod
-    def _mac_to_hex(mac_address: str) -> bytes:
+    def __mac_to_hex(mac_address: str) -> bytes:
         """
         Transform a MAC address string from IEEE 802.3 standard to a
         byte sequence of hexadecimal values.
