@@ -101,8 +101,9 @@ def spoof(args):
 
     spoofer = Spoofer(interface=args.interface, arp_packets=packets)
 
+    current_time = time.strftime("%H:%M:%S", time.localtime())
     print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
-          'abort.'.format(time.strftime("%H:%M:%S", time.localtime())))
+          'abort.'.format(current_time))
     try:
         spoofer.execute(max_packets=args.maxpackets, interval=args.interval)
     except KeyboardInterrupt:
