@@ -17,6 +17,23 @@ from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 i = ' ' * 4  # Basic indentation level
 
 
+def hardware_to_hex(mac):
+    return b''.join(bytes.fromhex(octet) for octet in re.split('[:-]', mac))
+
+
+class EthernetFrame(object):
+    def __init__(self, dest_hdwr: str, source_hdwr: str, ethertype: bytes):
+        self.dest_hdwr = dest_hdwr
+        self.source_hdwr = source_hdwr
+        self.ethertype = ethertype
+        self.bytes_dest_hdwr = hardware_to_hex(self.dest_hdwr)
+        self.bytes_source_hdwr = hardware_to_hex(self.source_hdwr)
+
+    @property
+    def payload(self):  # Defined by IEEE 802.3
+        return self.bytes_dest_hdwr + self.bytes_source_hdwr + self.ethertype
+
+
 class ARPPacket(object):
     def __init__(self, sender_hdwr: str, sender_proto: str,
                  target_hdwr: str, target_proto: str,
