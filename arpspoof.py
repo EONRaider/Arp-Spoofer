@@ -37,54 +37,30 @@ class EthernetFrame(object):
 class ARPPacket(object):
     def __init__(self, sender_hdwr: str, sender_proto: str,
                  target_hdwr: str, target_proto: str,
-                 ethertype: bytes = b'\x08\x06',  # ARP EtherType code
-                 htype: bytes = b'\x00\x01',      # Ethernet
-                 ptype: bytes = b'\x08\x00',      # IP
+                 htype: bytes = b'\x00\x01',  # Ethernet
+                 ptype: bytes = b'\x08\x00',  # IP
                  hlen: bytes = b'\x06',
                  plen: bytes = b'\x04',
-                 oper: bytes = b'\x00\x02'):      # ARP REPLY message
+                 oper: bytes = b'\x00\x02'):  # ARP REPLY message
         self.sender_hdwr = sender_hdwr
+        self.bytes_sender_hdwr = hardware_to_hex(self.sender_hdwr)
         self.sender_proto = sender_proto
+        self.bytes_sender_proto = inet_aton(self.sender_proto)
         self.target_hdwr = target_hdwr
+        self.bytes_target_hdwr = hardware_to_hex(self.target_hdwr)
         self.target_proto = target_proto
-        self.ethertype = ethertype
+        self.bytes_target_proto = inet_aton(self.target_proto)
         self.htype = htype
         self.ptype = ptype
         self.hlen = hlen
         self.plen = plen
         self.oper = oper
 
-    def __set_hardware_addrs_as_bytes(self, *args):
-        def hdwr_to_hex(mac):
-            return b''.join(bytes.fromhex(octet) for octet in
-                            re.split('[:-]', mac))
-        for hdwr, hdwr_addr in zip(('b_sender_hdwr', 'b_target_hdwr'), args):
-            setattr(self, hdwr, hdwr_to_hex(hdwr_addr))
-
-    def __set_protocol_addrs_as_bytes(self, *args):
-        for proto, proto_addr in zip(('b_sender_proto', 'b_target_proto'), args):
-            setattr(self, proto, inet_aton(proto_addr))
-
-    def __build_ethernet_frame(self):  # Defined by IEEE 802.3
-        self.ethernet_frame = self.b_target_hdwr \
-                              + self.b_sender_hdwr \
-                              + self.ethertype
-
-    def __build_arp_payload(self, *args):  # Defined by IETF RFC 826
-        self.arp_payload = b''.join(args) \
-                           + self.b_sender_hdwr \
-                           + self.b_sender_proto \
-                           + self.b_target_hdwr \
-                           + self.b_target_proto
-
     @property
-    def contents(self):
-        self.__set_hardware_addrs_as_bytes(self.sender_hdwr, self.target_hdwr)
-        self.__set_protocol_addrs_as_bytes(self.sender_proto, self.target_proto)
-        self.__build_ethernet_frame()
-        self.__build_arp_payload(self.htype, self.ptype, self.hlen, self.plen,
-                                 self.oper)
-        return b''.join((self.ethernet_frame, self.arp_payload))
+    def payload(self):  # Defined by IETF RFC 826
+        return self.htype + self.ptype + self.hlen + self.plen + self.oper \
+               + self.bytes_sender_hdwr + self.bytes_sender_proto \
+               + self.bytes_target_hdwr + self.bytes_target_proto
 
 
 class AttackPackets(object):
