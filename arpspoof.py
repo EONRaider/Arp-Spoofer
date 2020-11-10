@@ -22,9 +22,7 @@ class ARPPacket(object):
                  gateway_ip: str, target_ip: str):
         self.gateway_ip = inet_aton(gateway_ip)
         self.target_ip = inet_aton(target_ip)
-        self.attacker_mac = self.__mac_to_hex(attacker_mac)
-        self.gateway_mac = self.__mac_to_hex(gateway_mac)
-        self.target_mac = self.__mac_to_hex(target_mac)
+        self.__hexlify_mac_addresses(attacker_mac, gateway_mac, target_mac)
         self.eth_frame_to_gateway = self.gateway_mac + self.attacker_mac \
                                     + b'\x08\x06'  # Ethertype of ARP IEEE 802.3
         self.eth_frame_to_target = self.target_mac + self.attacker_mac \
@@ -44,12 +42,17 @@ class ARPPacket(object):
         self.restore_arp_table = True
         self.build()
 
+    def __hexlify_mac_addresses(self, *args):
+        for mac_name, mac_address in \
+                zip(('attacker_mac', 'gateway_mac', 'target_mac'), args):
+            setattr(self, mac_name, self.__mac_to_hex(mac_address))
+
     @staticmethod
     def __mac_to_hex(mac_address: str) -> bytes:
         """
         Transform a MAC address string from IEEE 802.3 standard to a
         byte sequence of hexadecimal values.
-        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12#4'
+        Ex: 'AB:BC:CD:12:23:34' to b'\xab\xbc\xcd\x12\x23\x34'
         """
         return b''.join(bytes.fromhex(octet) for octet in
                         re.split('[:-]', mac_address))
