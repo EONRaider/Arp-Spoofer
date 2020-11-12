@@ -163,5 +163,4 @@ if __name__ == '__main__':
                         help='IP address currently assigned to the gateway.')
     parser.add_argument('--targetip', type=str, required=True, metavar='IP',
                         help='IP address currently assigned to the target.')
-    cli_args = parser.parse_args()
-    spoof(cli_args)
+    spoof(parser.parse_args())
