@@ -1,7 +1,10 @@
-# ARP Cache Poisoning Tool
+# Python 3 ARP Spoofing Tool
 
 A pure-Python ARP Cache Poisoning (a.k.a. "ARP Spoofing") tool that leverages a low-level 
-assembly of ethernet frames and ARP packets.
+assembly of Ethernet II frames and ARP packets.
+
+This application maintains no dependencies on third-party modules and can be 
+run by any Python 3.x interpreter.
 
 ## Installation
 
