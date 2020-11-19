@@ -9,6 +9,19 @@ from ctypes import *
 from socket import inet_aton
 
 
+class Packet(object):
+    def __init__(self, *protocols):
+        for proto in protocols:
+            setattr(self, proto.__name__.lower(), proto)
+
+    def __bytes__(self):
+        return b''.join(proto for proto in self.__dict__.values())
+
+    @property
+    def payload(self):
+        return self.__bytes__()
+
+
 class Protocol(BigEndianStructure):
     _pack_ = 1
 
@@ -34,6 +47,8 @@ class Protocol(BigEndianStructure):
 
 
 class Ethernet(Protocol):
+    __name__ = 'Ethernet'
+
     _fields_ = [
         ('dst', c_ubyte * 6),  # Destination hardware address
         ('src', c_ubyte * 6),  # Source hardware address
@@ -48,6 +63,8 @@ class Ethernet(Protocol):
 
 
 class ARP(Protocol):
+    __name__ = 'ARP'
+
     _fields_ = [
         ("htype", c_uint16),   # Hardware type
         ("ptype", c_uint16),   # Protocol type
