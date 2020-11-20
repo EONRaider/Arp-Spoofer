@@ -57,11 +57,6 @@ class Spoofer(object):
 def spoof(args):
     """Controls the flow of execution of the ARP Spoofer tool."""
 
-    if args.disassociate is True:
-        hex_values = '0123456789ABCDEF'
-        args.attackermac = ':'.join(''.join(random.choices(hex_values, k=2))
-                                    for _ in range(6))
-
     packets = AttackPackets(attacker_mac=args.attackermac,
                             gateway_mac=args.gatemac, gateway_ip=args.gateip,
                             target_mac=args.targetmac, target_ip=args.targetip)
@@ -72,6 +67,11 @@ def spoof(args):
         spoofer.execute(packets, interval=args.interval)
     except KeyboardInterrupt:
         raise SystemExit('[!] ARP Spoofing attack terminated.')
+
+
+def generate_random_mac():
+    hex_values = '0123456789ABCDEF'
+    return ':'.join(''.join(random.choices(hex_values, k=2)) for _ in range(6))
 
 
 if __name__ == '__main__':
@@ -102,4 +102,9 @@ if __name__ == '__main__':
     parser.add_argument('--interval', type=float, default=0.5, metavar='TIME',
                         help='Time in between each transmission of spoofed ARP '
                              'packets (defaults to 0.5 seconds).')
-    spoof(parser.parse_args())
+    cli_args = parser.parse_args()
+
+    if cli_args.disassociate is True:
+        cli_args.attackermac = generate_random_mac()
+
+    spoof(cli_args)
