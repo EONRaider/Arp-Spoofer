@@ -11,8 +11,13 @@ from socket import inet_aton
 
 class Packet(object):
     def __init__(self, *protocols):
-        for proto in protocols:
-            setattr(self, proto.__name__.lower(), proto)
+        valid_protocols = (cls.__name__ for cls in Protocol.__subclasses__())
+        for protocol in protocols:
+            protocol_name = protocol.__class__.__name__
+            if protocol_name not in valid_protocols:
+                raise AttributeError('Cannot build packet. Invalid protocol: {}'
+                                     .format(protocol_name))
+            setattr(self, protocol_name.lower(), protocol)
 
     def __bytes__(self):
         return b''.join(proto for proto in self.__dict__.values())
@@ -26,7 +31,7 @@ class Protocol(BigEndianStructure):
     _pack_ = 1
 
     def __new__(cls, *args, **kwargs):
-        return BigEndianStructure.__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self):
         super().__init__()
@@ -46,9 +51,7 @@ class Protocol(BigEndianStructure):
         return (c_ubyte * 4)(*addr_to_bytes)
 
 
-class Ethernet(Protocol):
-    __name__ = 'Ethernet'
-
+class Ethernet(Protocol):      # IEEE 802.3 standard
     _fields_ = [
         ('dst', c_ubyte * 6),  # Destination hardware address
         ('src', c_ubyte * 6),  # Source hardware address
@@ -62,9 +65,7 @@ class Ethernet(Protocol):
         self.eth = int(eth)
 
 
-class ARP(Protocol):
-    __name__ = 'ARP'
-
+class ARP(Protocol):           # IETF RFC 826
     _fields_ = [
         ("htype", c_uint16),   # Hardware type
         ("ptype", c_uint16),   # Protocol type
