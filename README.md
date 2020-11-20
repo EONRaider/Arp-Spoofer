@@ -34,17 +34,15 @@ positional arguments:
 
 optional arguments:
   -h, --help         show this help message and exit
-  --attackermac MAC  MAC address of the Network Interface Controller (NIC) used by 
-                     the attacker.
-  --disassociate     Execute a disassociation attack in which a randomized MAC 
-                     address is set for the attacker machine, effectively making 
-                     the target host send packets to a non-existent gateway.
   --gatemac MAC      MAC address of the NIC associated to the gateway.
   --targetmac MAC    MAC address of the NIC associated to the target.
   --gateip IP        IP address currently assigned to the gateway.
   --targetip IP      IP address currently assigned to the target.
   --interval TIME    Time in between each transmission of spoofed ARP packets 
                      (defaults to 0.5 seconds).
+  --disassociate     Execute a disassociation attack in which a randomized MAC 
+                     address is set for the attacker machine, effectively making 
+                     the target host send packets to a non-existent gateway.
 ```
 
 
@@ -56,9 +54,9 @@ meant to be reset upon the next reboot (for a permanent solution check [this gui
 
   `user@host:~$ sudo sysctl -w net.ipv4.ip_forward=1`
 
-- Example command with which we initiate an attack against a given target machine 
+- Example command in which we initiate an attack against a given target machine 
 and gateway (the `eth0` interface is the one the attacker uses to send spoofed 
-packets):
+packets in this example):
   ```
   user@host:~$ sudo python3 arpspoof.py eth0 \
   --gateip 10.0.1.1 --gatemac 52:54:00:45:6a:69 \
