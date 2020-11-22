@@ -84,6 +84,11 @@ class ARP(Protocol):           # IETF RFC 826
         ("tha", c_ubyte * 6),  # Target hardware address
         ("tpa", c_ubyte * 4),  # Target protocol address
     ]
+    ETHERNET = 1
+    IPV4 = 0x0800
+    ETHERNET_ADDR_LEN = 6
+    IPV4_ADDR_LEN = 4
+    REPLY = 2
 
     def __init__(self, *, sha: str, spa: str, tha: str, tpa: str):
         super().__init__()
