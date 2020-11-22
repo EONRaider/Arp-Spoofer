@@ -40,7 +40,10 @@ class Protocol(BigEndianStructure):
         return create_string_buffer(sizeof(self))[:]
 
     @staticmethod
-    def hdwr_addr_array(mac_addr: str):
+    def hdwr_addr_to_array(mac_addr: str):
+        """
+        Converts a IEEE 802 MAC address to c_ubyte array of 6 bytes.
+        """
         mac_to_bytes = b''.join(bytes.fromhex(octet)
                                 for octet in re.split('[:-]', mac_addr))
         return (c_ubyte * 6)(*mac_to_bytes)
@@ -60,8 +63,8 @@ class Ethernet(Protocol):      # IEEE 802.3 standard
 
     def __init__(self, *, dst: str, src: str, eth: int):
         super().__init__()
-        self.dst = self.hdwr_addr_array(dst)
-        self.src = self.hdwr_addr_array(src)
+        self.dst = self.hdwr_addr_to_array(dst)
+        self.src = self.hdwr_addr_to_array(src)
         self.eth = int(eth)
 
 
