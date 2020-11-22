@@ -49,7 +49,11 @@ class Protocol(BigEndianStructure):
         return (c_ubyte * 6)(*mac_to_bytes)
 
     @staticmethod
-    def proto_addr_array(proto_addr: str):
+    def proto_addr_to_array(proto_addr: str):
+        """
+        Converts a dotted-quad formatted IPv4 address string to a
+        c_ubyte array of 6 bytes.
+        """
         addr_to_bytes = inet_aton(proto_addr)
         return (c_ubyte * 4)(*addr_to_bytes)
 
@@ -83,12 +87,12 @@ class ARP(Protocol):           # IETF RFC 826
 
     def __init__(self, *, sha: str, spa: str, tha: str, tpa: str):
         super().__init__()
-        self.htype = 1
-        self.ptype = 0x0800
-        self.hlen = 6
-        self.plen = 4
-        self.oper = 2
-        self.sha = self.hdwr_addr_array(sha)
-        self.spa = self.proto_addr_array(spa)
-        self.tha = self.hdwr_addr_array(tha)
-        self.tpa = self.proto_addr_array(tpa)
+        self.htype = self.ETHERNET
+        self.ptype = self.IPV4
+        self.hlen = self.ETHERNET_ADDR_LEN
+        self.plen = self.IPV4_ADDR_LEN
+        self.oper = self.REPLY
+        self.sha = self.hdwr_addr_to_array(sha)
+        self.spa = self.proto_addr_to_array(spa)
+        self.tha = self.hdwr_addr_to_array(tha)
+        self.tpa = self.proto_addr_to_array(tpa)
