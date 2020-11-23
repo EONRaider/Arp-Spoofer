@@ -18,12 +18,13 @@ run by any Python 3.x interpreter.
 
 Simply clone this repository with `git clone` and execute the `arpspoof.py` file 
 as described in the following **Usage** section.
-```
+
+```sh
 user@host:~/DIR$ git clone https://github.com/EONRaider/Arp-Spoofer.git
 ```
 
 ## Usage
-```
+```sh
 arpspoof.py [-h] [-i INTERFACE] [--attackermac MAC] [--gatemac MAC]
                    [--targetmac MAC] [--gateip IP] [--interval TIME]
                    [--disassociate]
@@ -66,6 +67,7 @@ user@host:~$ sudo sysctl -w net.ipv4.ip_forward=1
 - Example command in which we initiate an attack against a given target machine 
 and gateway (the `eth0` interface is the one the attacker uses to send spoofed 
 packets in this example):
+
 ```sh
 user@host:~$ sudo python3 arpspoof.py 10.0.1.6
   
@@ -81,9 +83,11 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6
 
 [+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
 ```
+
 - Traffic displayed by [Network Packet Sniffer](https://github.com/EONRaider/Packet-Sniffer)
 as the attack initiated above takes place:
-```
+
+```sh
 [>] Packet #1 at 14:10:12:
     [+] MAC ......08:92:27:dc:3a:71 -> ff:ff:ff:ff:ff:ff
     [+] ARP Who has      10.0.1.6 ? -> Tell 10.0.1.5
@@ -118,7 +122,19 @@ address**. All other required settings are looked up from the
 attacker system's ARP and routing tables and by probing ephemeral
 ports on the target host.
 
-That is the reason why a simple command such as 
+- Operations executed to obtain each configuration:
+    - `Interface`: Parse routing table and look for interfaces connected 
+    to the gateway.
+    - `Attacker MAC`: Bind to interface and query name from `socket`.
+    - `Gateway IP`: Parse routing table and find route with `0x0003` 
+    flag set.
+    - `Gateway MAC`: Parse ARP table looking for devices with `Gateway IP`.
+    - `Target MAC`: Send a UDP datagram with a null-byte to a random 
+    ephemeral port on the target system, effectively making the attacker
+    system execute an ARP request to the broadcast address, and then
+    reading the newly written information from the ARP table.
+ 
+These are the reasons why a simple command such as 
 `sudo python3 arpspoof.py 10.0.1.6` from the instructions above is able to 
 initiate a gathering of all required information to initiate the attack,
 releasing the Penetration Tester from going through all the usual commands
