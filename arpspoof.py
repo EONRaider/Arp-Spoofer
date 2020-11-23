@@ -69,18 +69,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
                     'Spoofing") on local networks.')
-    parser.add_argument('interface', type=str,
+    parser.add_argument('targetip', type=str, metavar='IP',
+                        help='IP address currently assigned to the target.')
+    parser.add_argument('-i', '--interface', type=str,
                         help='Interface on the attacker machine to send '
                              'packets from.')
-    parser.add_argument('--gatemac', type=str, required=True, metavar='MAC',
+    parser.add_argument('--attackermac', type=str, metavar='MAC',
+                        help='MAC address of the NIC from which the attacker '
+                             'machine will send the spoofed ARP packets.')
+    parser.add_argument('--gatemac', type=str, metavar='MAC',
                         help='MAC address of the NIC associated to the '
                              'gateway.')
-    parser.add_argument('--targetmac', type=str, required=True, metavar='MAC',
+    parser.add_argument('--targetmac', type=str, metavar='MAC',
                         help='MAC address of the NIC associated to the target.')
-    parser.add_argument('--gateip', type=str, required=True, metavar='IP',
+    parser.add_argument('--gateip', type=str, metavar='IP',
                         help='IP address currently assigned to the gateway.')
-    parser.add_argument('--targetip', type=str, required=True, metavar='IP',
-                        help='IP address currently assigned to the target.')
     parser.add_argument('--interval', type=float, default=0.5, metavar='TIME',
                         help='Time in between each transmission of spoofed ARP '
                              'packets (defaults to 0.5 seconds).')
@@ -90,10 +93,4 @@ if __name__ == '__main__':
                              'machine, effectively making the target host send '
                              'packets to a non-existent gateway.')
     cli_args = parser.parse_args()
-
-    if cli_args.disassociate is True:
-        cli_args.attackermac = generate_random_mac()
-    else:
-        cli_args.attackermac = get_interface_mac_address(cli_args.interface)
-
     spoof(cli_args)
