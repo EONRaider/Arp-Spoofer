@@ -69,7 +69,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
                     'Spoofing") on local networks.')
-    parser.add_argument('targetip', type=str, metavar='IP',
+    parser.add_argument('targetip', type=str, metavar='TARGET_IP',
                         help='IP address currently assigned to the target.')
     parser.add_argument('-i', '--interface', type=str,
                         help='Interface on the attacker machine to send '
