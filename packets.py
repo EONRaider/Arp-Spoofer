@@ -56,19 +56,18 @@ class ARPSetupProxy(object):
 
     def __init__(self, interface, attacker_mac, gateway_mac,
                  gateway_ip, target_mac, target_ip, disassociate):
-        self.__get_gateway_route()
-        self.interface = interface
-        self._disassociate = disassociate
         self._target_ip = target_ip
-        self._gateway_ip = gateway_ip
-        self._target_mac = target_mac
-        self._gateway_mac = gateway_mac
-        self._attacker_mac = attacker_mac
+        self._disassociate = disassociate
+        self.interface = self.__set_interface(interface)
+        self._attacker_mac = self.__get_attacker_mac(attacker_mac)
+        self._gateway_ip = self.__get_gateway_ip(gateway_ip)
+        self._gateway_mac = self.__get_gateway_mac(gateway_mac)
+        self._target_mac = self.__get_target_mac(target_mac)
         self.packets = ARPAttackPackets(self._attacker_mac,
-                                        self._gateway_mac,
                                         self._gateway_ip,
-                                        self._target_mac,
-                                        self._target_ip)
+                                        self._gateway_mac,
+                                        self._target_ip,
+                                        self._target_mac)
 
     @staticmethod
     def arp_table():
@@ -92,90 +91,64 @@ class ARPSetupProxy(object):
             yield from (line for line in reader)
 
     def __get_gateway_route(self):
+        """
+        Determine the route that leads to the gateway by finding the
+        line that contains the flag 0x0003 in the routing table,
+        indicating a usable route whose destination is a gateway.
+        Defined by Linux Kernel userspace API at route.h
+        """
         for route in self.routing_table:
             if int(route['flags'], base=16) == 3:
-                """Flag 0x0003 in the routing table indicates a usable 
-                route whose destination is a gateway. Defined by Linux 
-                Kernel userspace API at route.h"""
-                self.gateway_route = route
+                self.__gateway_route = route
 
-    @property
-    def interface(self):
-        return self.__interface
+    def __set_interface(self, interface):
+        self.__get_gateway_route()
+        return self.__gateway_route['interface'] if interface is None \
+            else interface
 
-    @interface.setter
-    def interface(self, interface_name):
-        if interface_name is None:
-            interface_name = self.gateway_route['interface']
-        self.__interface = interface_name
+    def __get_gateway_ip(self, gateway_ip):
+        return inet_ntoa(pack("=L", int(self.__gateway_route['gateway'], 16))) \
+            if gateway_ip is None else gateway_ip
 
-    @property
-    def _gateway_ip(self):
-        return self.__gateway_ip
+    def __get_gateway_mac(self, gateway_mac):
+        if gateway_mac is not None:
+            return gateway_mac
+        for entry in self.arp_table():
+            if entry['ip_address'] == self._gateway_ip:
+                return entry['hw_address']
 
-    @_gateway_ip.setter
-    def _gateway_ip(self, ip_addr):
-        if ip_addr is None:
-            ip_addr = inet_ntoa(
-                pack("=L", int(self.gateway_route['gateway'], 16)))
-        self.__gateway_ip = ip_addr
-
-    @property
-    def _gateway_mac(self):
-        return self.__gateway_mac
-
-    @_gateway_mac.setter
-    def _gateway_mac(self, mac_addr):
-        if mac_addr is None:
-            for entry in self.arp_table():
-                if entry['ip_address'] == self._gateway_ip:
-                    mac_addr = entry['hw_address']
-        self.__gateway_mac = mac_addr
-
-    @property
-    def _target_mac(self):
+    def __get_target_mac(self, mac_addr):
         """
-        Gets the target's MAC address.
         Sets the target's MAC address by sending it UDP datagrams with
-        null-bytes to random ports contained in the ephemeral port range
-        (IETF RFC 6335) and then looking up its registered MAC address
-        in the attacker's ARP table.
+        empty byte strings to random ports contained in the ephemeral
+        port range (IETF RFC 6335) and then looking up its registered
+        MAC address in the attacker's ARP table.
         """
-        return self.__target_mac
-    
-    @_target_mac.setter
-    def _target_mac(self, mac_addr: str):
+        if mac_addr is not None:
+            return mac_addr
         with socket(AF_INET, SOCK_DGRAM) as sock:
-            while mac_addr is None:
-                port = randint(49152, 65535)
-                sock.sendto(b'', (self._target_ip, port))
-                sleep(2)
+            while True:
                 for entry in self.arp_table():
                     if entry['ip_address'] == self._target_ip:
-                        mac_addr = entry['hw_address']
-        self.__target_mac = mac_addr
+                        return entry['hw_address']
+                sock.sendto(b'', (self._target_ip, randint(49152, 65535)))
+                sleep(2)
 
-    @property
-    def _attacker_mac(self):
+    def __get_attacker_mac(self, mac_addr):
         """
-        Gets the attacker's MAC address.
         Sets the attacker's MAC address to a random IEEE 802 compliant
         address if 'disassociate' is set to True or queries the system
         for the interface's address by temporarily binding to it.
         """
-        return self.__attacker_mac
-
-    @_attacker_mac.setter
-    def _attacker_mac(self, mac_addr):
-        if mac_addr is None:
-            if self._disassociate is True:
-                mac_addr = self.__randomize_mac_addr()
-            else:
-                with socket(AF_PACKET, SOCK_RAW) as sock:
-                    sock.bind((self.interface, 0))
-                    mac_address: bytes = sock.getsockname()[4]
-                mac_addr = self.__bytes_to_mac_addr(mac_address)
-        self.__attacker_mac = mac_addr
+        if mac_addr is not None:
+            return mac_addr
+        elif self._disassociate is True:
+            return self.__randomize_mac_addr()
+        else:
+            with socket(AF_PACKET, SOCK_RAW) as sock:
+                sock.bind((self.interface, 0))
+                mac_address: bytes = sock.getsockname()[4]
+            return self.__bytes_to_mac_addr(mac_address)
 
     @staticmethod
     def __randomize_mac_addr() -> str:
