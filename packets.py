@@ -107,6 +107,13 @@ class ARPSetupProxy(object):
             else interface
 
     def __get_gateway_ip(self, gateway_ip):
+        """
+        Gets the gateway's IP address by converting its standard-sized,
+        native byte order hexadecimal representation stored in the
+        routing table to a string with the IPv4 address in
+        dotted-decimal notation.
+        Ex: From 'FE01A8C0' to '192.168.1.254'
+        """
         return inet_ntoa(pack("=L", int(self.__gateway_route['gateway'], 16))) \
             if gateway_ip is None else gateway_ip
 
