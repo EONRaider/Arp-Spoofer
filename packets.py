@@ -13,13 +13,13 @@ from protocols import ARP, Ethernet, Packet
 
 
 class ARPAttackPackets(object):
-    def __init__(self, attacker_mac: str, gateway_mac: str, gateway_ip: str,
-                 target_mac: str, target_ip: str):
+    def __init__(self, attacker_mac: str, gateway_ip: str, gateway_mac: str,
+                 target_ip: str, target_mac: str):
         self.attacker_mac = attacker_mac
-        self.gateway_mac = gateway_mac
         self.gateway_ip = gateway_ip
-        self.target_mac = target_mac
+        self.gateway_mac = gateway_mac
         self.target_ip = target_ip
+        self.target_mac = target_mac
         self.payloads = self.payload_to_gateway, self.payload_to_target
 
     def __iter__(self):
