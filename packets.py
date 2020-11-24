@@ -59,7 +59,7 @@ class ARPSetupProxy(object):
         self._target_ip = target_ip
         self._disassociate = disassociate
         self.interface = self.__set_interface(interface)
-        self._attacker_mac = self.__get_attacker_mac(attacker_mac)
+        self._attacker_mac = self.__set_attacker_mac(attacker_mac)
         self._gateway_ip = self.__get_gateway_ip(gateway_ip)
         self._gateway_mac = self.__get_gateway_mac(gateway_mac)
         self._target_mac = self.__get_target_mac(target_mac)
@@ -119,7 +119,7 @@ class ARPSetupProxy(object):
 
     def __get_target_mac(self, mac_addr):
         """
-        Sets the target's MAC address by sending it UDP datagrams with
+        Gets the target's MAC address by sending it UDP datagrams with
         empty byte strings to random ports contained in the ephemeral
         port range (IETF RFC 6335) and then looking up its registered
         MAC address in the attacker's ARP table.
@@ -134,7 +134,7 @@ class ARPSetupProxy(object):
                 sock.sendto(b'', (self._target_ip, randint(49152, 65535)))
                 sleep(2)
 
-    def __get_attacker_mac(self, mac_addr):
+    def __set_attacker_mac(self, mac_addr):
         """
         Sets the attacker's MAC address to a random IEEE 802 compliant
         address if 'disassociate' is set to True or queries the system
