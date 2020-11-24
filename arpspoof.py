@@ -88,15 +88,23 @@ if __name__ == '__main__':
                         help='MAC address of the NIC associated to the target.')
     parser.add_argument('--gateip', type=str, metavar='IP',
                         help='IP address currently assigned to the gateway.')
-    parser.add_argument('--interval', type=float, default=0.5, metavar='TIME',
+    parser.add_argument('--interval', type=float, default=1, metavar='TIME',
                         help='Time in between each transmission of spoofed ARP '
-                             'packets (defaults to 0.5 seconds).')
-    parser.add_argument('--disassociate', action='store_true',
+                             'packets (defaults to 1 second).')
+    parser.add_argument('-d', '--disassociate', action='store_true',
                         help='Execute a disassociation attack in which a '
                              'randomized MAC address is set for the attacker '
                              'machine, effectively making the target host send '
                              'packets to a non-existent gateway.')
+    parser.add_argument('-f', '--ipforward', action='store_true',
+                        help='Temporarily enable forwarding of IPv4 packets on '
+                             'the attacker system until the next reboot. '
+                             'Enable to intercept information between the '
+                             'target host and the gateway, performing a '
+                             'man-in-the-middle attack. Requires administrator '
+                             'privileges.')
     cli_args = parser.parse_args()
+
     spoofer = Spoofer(interface=cli_args.interface,
                       attacker_mac=cli_args.attackermac,
                       gateway_mac=cli_args.gatemac,
@@ -104,5 +112,6 @@ if __name__ == '__main__':
                       target_mac=cli_args.targetmac,
                       target_ip=cli_args.targetip,
                       interval=cli_args.interval,
-                      disassociate=cli_args.disassociate)
+                      disassociate=cli_args.disassociate,
+                      ip_forwarding=cli_args.ipforward)
     spoofer.execute()
