@@ -14,11 +14,13 @@ class Spoofer(object):
     def __init__(self, *, interface: str, attacker_mac: str,
                  gateway_mac: str, gateway_ip: str,
                  target_mac: str, target_ip: str,
-                 interval: float, disassociate: bool):
-        self.interval = interval
-        self.arp = ARPSetupProxy(interface, attacker_mac, gateway_mac,
-                                 gateway_ip, target_mac, target_ip,
-                                 disassociate)
+                 interval: float, disassociate: bool,
+                 ip_forwarding: bool):
+        self.__interval = interval
+        self.__ip_forwarding = ip_forwarding
+        self.__arp = ARPSetupProxy(interface, attacker_mac, gateway_mac,
+                                   gateway_ip, target_mac, target_ip,
+                                   disassociate)
 
     def execute(self):
         try:
@@ -37,12 +39,13 @@ class Spoofer(object):
 
     def __display_user_prompt(self):
         print('\n[>>>] ARP Spoofing configuration:')
-        configurations = {'Interface': self.arp.interface,
-                          'Attacker MAC': self.arp.packets.attacker_mac,
-                          'Gateway IP': self.arp.packets.gateway_ip,
-                          'Gateway MAC': self.arp.packets.gateway_mac,
-                          'Target IP': self.arp.packets.target_ip,
-                          'Target MAC': self.arp.packets.target_mac}
+        configurations = {'IPv4 Forwarding': str(self.__ip_forwarding),
+                          'Interface': self.__arp.interface,
+                          'Attacker MAC': self.__arp.packets.attacker_mac,
+                          'Gateway IP': self.__arp.packets.gateway_ip,
+                          'Gateway MAC': self.__arp.packets.gateway_mac,
+                          'Target IP': self.__arp.packets.target_ip,
+                          'Target MAC': self.__arp.packets.target_mac}
 
         for setting, value in configurations.items():
             print('{0: >7} {1: <13}{2:.>25}'.format('[+]', setting, value))
