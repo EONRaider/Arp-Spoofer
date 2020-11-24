@@ -35,6 +35,9 @@ class Spoofer(object):
     @staticmethod
     def __enable_ipv4_forwarding():
         try:
+            """subprocess.check_call is used in preference to 'run' as 
+            an attempt to guarantee compatibility with Python 
+            interpreters with versions prior to 3.5"""
             check_call(["sysctl", "-w", "net.ipv4.ip_forward=1"],
                        stdout=DEVNULL, stderr=DEVNULL)
         except CalledProcessError:
@@ -103,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--ipforward', action='store_true',
                         help='Temporarily enable forwarding of IPv4 packets on '
                              'the attacker system until the next reboot. '
-                             'Enable to intercept information between the '
+                             'Set this to intercept information between the '
                              'target host and the gateway, performing a '
                              'man-in-the-middle attack. Requires administrator '
                              'privileges.')
