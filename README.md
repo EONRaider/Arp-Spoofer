@@ -81,7 +81,7 @@ optional arguments:
 </tbody>
 </table>
 
----
+#
 
 #### METHOD II: Detailed Usage
 
@@ -193,7 +193,7 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
 
 *And that's it! The attack will persist until otherwise aborted.*
 
----
+#
 
 ### But how is this possible?
 
