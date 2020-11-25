@@ -8,7 +8,6 @@ from random import choices, randint
 from socket import inet_ntoa, socket, AF_INET, AF_PACKET, SOCK_DGRAM, SOCK_RAW
 from struct import pack
 from time import sleep
-from typing import Generator, Union
 
 from protocols import ARP, Ethernet, Packet
 
@@ -82,7 +81,7 @@ class ARPSetupProxy(object):
             return tuple(line for line in reader)
 
     @property
-    def routing_table(self) -> Generator:
+    def routing_table(self):
         with open('/proc/net/route', 'r', encoding='utf_8') as routing_table:
             field_names = ['interface', 'destination', 'gateway', 'flags',
                            'ref_cnt', 'use', 'metric', 'mask', 'mtu',
@@ -100,15 +99,15 @@ class ARPSetupProxy(object):
         Defined by Linux Kernel userspace API at route.h
         """
         for route in self.routing_table:
-            if int(route['flags'], base=16) == 3:
+            if int(route['flags']) == 0x0003:
                 self.__gateway_route = route
 
-    def __set_interface(self, interface: str) -> Union[str, None]:
+    def __set_interface(self, interface: str) -> str:
         self.__get_gateway_route()
         return self.__gateway_route['interface'] if interface is None \
             else interface
 
-    def __set_gateway_ip(self, gateway_ip: str) -> Union[str, None]:
+    def __set_gateway_ip(self, gateway_ip: str) -> str:
         """
         Sets the gateway's IP address by converting its standard-sized,
         native byte order hexadecimal representation stored in the
@@ -119,14 +118,14 @@ class ARPSetupProxy(object):
         return inet_ntoa(pack("=L", int(self.__gateway_route['gateway'], 16))) \
             if gateway_ip is None else gateway_ip
 
-    def __set_gateway_mac(self, gateway_mac: str) -> Union[str, None]:
+    def __set_gateway_mac(self, gateway_mac: str) -> str:
         if gateway_mac is not None:
             return gateway_mac
         for entry in self.arp_table():
             if entry['ip_address'] == self._gateway_ip:
                 return entry['hw_address']
 
-    def __set_target_mac(self, mac_addr: str) -> Union[str, None]:
+    def __set_target_mac(self, mac_addr: str) -> str:
         """
         Sets the target's MAC address by sending it UDP datagrams with
         empty byte strings to random ports contained in the ephemeral
@@ -143,7 +142,7 @@ class ARPSetupProxy(object):
                 sock.sendto(b'', (self._target_ip, randint(49152, 65535)))
                 sleep(2)
 
-    def __set_attacker_mac(self, mac_addr: str) -> Union[str, None]:
+    def __set_attacker_mac(self, mac_addr: str) -> str:
         """
         Sets the attacker's MAC address to a random IEEE 802 compliant
         address if 'disassociate' is set to True or queries the system
