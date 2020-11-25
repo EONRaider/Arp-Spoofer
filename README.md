@@ -60,7 +60,7 @@ optional arguments:
 
 ## Running the Application
 
-#### "Too long, didn't read"
+#### METHOD I: "Too long, didn't read"
 <table>
 <thead>
   <tr>
@@ -81,7 +81,9 @@ optional arguments:
 </tbody>
 </table>
 
-#### Detailed Usage
+---
+
+#### METHOD II: Detailed Usage
 
 <table>
 <thead>
@@ -136,7 +138,6 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
 
 [+] ARP Spoofing attack initiated. Press Ctrl-C to abort.
 ```
----
 
 <table>
 <thead>
@@ -191,6 +192,8 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
 ```
 
 *And that's it! The attack will persist until otherwise aborted.*
+
+---
 
 ### But how is this possible?
 
