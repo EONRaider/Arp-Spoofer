@@ -60,9 +60,9 @@ class ARPSetupProxy(object):
         self._disassociate = disassociate
         self.interface = self.__set_interface(interface)
         self._attacker_mac = self.__set_attacker_mac(attacker_mac)
-        self._gateway_ip = self.__get_gateway_ip(gateway_ip)
-        self._gateway_mac = self.__get_gateway_mac(gateway_mac)
-        self._target_mac = self.__get_target_mac(target_mac)
+        self._gateway_ip = self.__set_gateway_ip(gateway_ip)
+        self._gateway_mac = self.__set_gateway_mac(gateway_mac)
+        self._target_mac = self.__set_target_mac(target_mac)
         self.packets = ARPAttackPackets(self._attacker_mac,
                                         self._gateway_ip,
                                         self._gateway_mac,
@@ -106,7 +106,7 @@ class ARPSetupProxy(object):
         return self.__gateway_route['interface'] if interface is None \
             else interface
 
-    def __get_gateway_ip(self, gateway_ip):
+    def __set_gateway_ip(self, gateway_ip):
         """
         Gets the gateway's IP address by converting its standard-sized,
         native byte order hexadecimal representation stored in the
@@ -117,14 +117,14 @@ class ARPSetupProxy(object):
         return inet_ntoa(pack("=L", int(self.__gateway_route['gateway'], 16))) \
             if gateway_ip is None else gateway_ip
 
-    def __get_gateway_mac(self, gateway_mac):
+    def __set_gateway_mac(self, gateway_mac):
         if gateway_mac is not None:
             return gateway_mac
         for entry in self.arp_table():
             if entry['ip_address'] == self._gateway_ip:
                 return entry['hw_address']
 
-    def __get_target_mac(self, mac_addr):
+    def __set_target_mac(self, mac_addr):
         """
         Gets the target's MAC address by sending it UDP datagrams with
         empty byte strings to random ports contained in the ephemeral
