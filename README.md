@@ -1,7 +1,8 @@
 # Python 3 ARP Spoofing Tool
 
-[![Python Version](https://img.shields.io/badge/python-3.x-blue?style=for-the-badge&logo=python)](https://github.com/EONRaider/Packet-Sniffer/)
-[![Open Source? Yes!](https://img.shields.io/badge/Open%20Source%3F-Yes!-green?style=for-the-badge&logo=appveyor)](https://github.com/EONRaider/Packet-Sniffer/)
+![Python Version](https://img.shields.io/badge/python-3.x-blue?style=for-the-badge&logo=python)
+![OS](https://img.shields.io/badge/OS-GNU%2FLinux-red?style=for-the-badge&logo=linux)
+![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/eonraider/arp-spoofer?style=for-the-badge)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
 [![Reddit](https://img.shields.io/reddit/user-karma/combined/eonraider?style=flat-square&logo=reddit)](https://www.reddit.com/user/eonraider)
@@ -62,12 +63,6 @@ optional arguments:
 
 #### METHOD I: "Too long, didn't read"
 <table>
-<thead>
-  <tr>
-    <th>Step 1/1</th>
-    <th>Actions<br></th>
-  </tr>
-</thead>
 <tbody>
   <tr>
     <td>Objective</td>
@@ -88,8 +83,7 @@ optional arguments:
 <table>
 <thead>
   <tr>
-    <th>Step 1/2</th>
-    <th>Actions</th>
+    <th colspan="2">Step 1 of 2</th>
   </tr>
 </thead>
 <tbody>
@@ -142,8 +136,7 @@ user@host:~$ sudo python3 arpspoof.py 10.0.1.6 -f
 <table>
 <thead>
   <tr>
-    <th>Step 2/2</th>
-    <th>Actions<br></th>
+    <th colspan="2">Step 2 of 2</th>
   </tr>
 </thead>
 <tbody>
