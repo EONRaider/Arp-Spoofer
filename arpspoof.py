@@ -32,12 +32,12 @@ class Spoofer(object):
             raise SystemExit('[!] ARP Spoofing attack aborted.')
 
     def __check_ipv4_forwarding(self):
+        """subprocess.check_call is used in preference to 'run' as an
+        attempt to guarantee compatibility with all Python 3.x
+        interpreters"""
         if self.__ipv4_forwarding is True:
             try:
-                """subprocess.check_call is used in preference to 'run' 
-                as an attempt to guarantee compatibility with all 
-                Python 3.x interpreters"""
-                check_call(["sysctl", "-w", "net.ipv4.ip_forward=1"],
+                check_call(["/usr/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
                            stdout=DEVNULL, stderr=DEVNULL)
             except CalledProcessError:
                 raise SystemExit('Error: Permission denied. Execute with '
