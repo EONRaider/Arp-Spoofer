@@ -100,14 +100,17 @@ class ARPSetupProxy(object):
         indicating a usable route whose destination is a gateway.
         Defined by Linux Kernel userspace API at route.h
         """
-        for route in self.routing_table:
-            if int(route['flags']) == 0x0003:
-                self.__gateway_route = route
+        try:
+            return next(route for route in self.routing_table() if
+                        int(route['flags']) == 0x0003)
+        except StopIteration:
+            raise SystemExit('[!] Unable to find usable route to the default '
+                             'gateway. Check network settings and try again.')
 
     def __set_interface(self, interface: str) -> str:
-        self.__get_gateway_route()
-        return self.__gateway_route['interface'] if interface is None \
-            else interface
+        if interface is not None:
+            return interface
+        return self._gateway_route['interface']
 
     def __set_gateway_ip(self, gateway_ip: str) -> str:
         """
@@ -117,8 +120,9 @@ class ARPSetupProxy(object):
         dotted-decimal notation.
         Ex: From 'FE01A8C0' to '192.168.1.254'
         """
-        return inet_ntoa(pack("=L", int(self.__gateway_route['gateway'], 16))) \
-            if gateway_ip is None else gateway_ip
+        if gateway_ip is not None:
+            return gateway_ip
+        return inet_ntoa(pack("=L", int(self._gateway_route['gateway'], 16)))
 
     def __set_gateway_mac(self, gateway_mac: str) -> str:
         if gateway_mac is not None:
@@ -152,13 +156,12 @@ class ARPSetupProxy(object):
         """
         if mac_addr is not None:
             return mac_addr
-        elif self._disassociate is True:
+        if self._disassociate is True:
             return self.__randomize_mac_addr()
-        else:
-            with socket(AF_PACKET, SOCK_RAW) as sock:
-                sock.bind((self.interface, 0))
-                mac_address: bytes = sock.getsockname()[4]
-            return self.__bytes_to_mac_addr(mac_address)
+        with socket(AF_PACKET, SOCK_RAW) as sock:
+            sock.bind((self.interface, 0))
+            mac_address: bytes = sock.getsockname()[4]
+        return self.__bytes_to_mac_addr(mac_address)
 
     @staticmethod
     def __randomize_mac_addr() -> str:
@@ -168,8 +171,7 @@ class ARPSetupProxy(object):
     @staticmethod
     def __bytes_to_mac_addr(addr: bytes) -> str:
         """
-        Converts a network-formatted byte-string of length 6 bytes to
-        IEEE 802 MAC address.
+        Converts a byte-string of length 6 bytes to IEEE 802 MAC address.
         Ex: From b'\xceP\x9a\xcc\x8c\x9d' to 'ce:50:9a:cc:8c:9d'
         """
-        return ':'.join('{:02x}'.format(octet) for octet in addr)
+        return ':'.join(format(octet, '02x') for octet in addr)
