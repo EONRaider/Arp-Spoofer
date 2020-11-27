@@ -5,7 +5,8 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 
 
 import re
-from ctypes import *
+from ctypes import BigEndianStructure, create_string_buffer, c_ubyte, c_uint8, \
+    c_uint16, sizeof
 from socket import inet_aton
 
 
@@ -51,7 +52,7 @@ class Protocol(BigEndianStructure):
     @staticmethod
     def proto_addr_to_array(proto_addr: str):
         """
-        Converts a dotted-quad formatted IPv4 address string to a
+        Converts a IPv4 address string in dotted-decimal notation to a
         c_ubyte array of 6 bytes.
         """
         addr_to_bytes = inet_aton(proto_addr)
