@@ -41,7 +41,7 @@ class Spoofer(object):
                            stdout=DEVNULL, stderr=DEVNULL)
             except CalledProcessError:
                 raise SystemExit('Error: Permission denied. Execute with '
-                                 'administrative privileges.')
+                                 'administrator privileges.')
 
     def __display_setup_prompt(self):
         print('\n[>>>] ARP Spoofing configuration:')
