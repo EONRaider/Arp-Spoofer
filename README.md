@@ -2,7 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.x-blue?style=for-the-badge&logo=python)
 ![OS](https://img.shields.io/badge/OS-GNU%2FLinux-red?style=for-the-badge&logo=linux)
-![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/eonraider/arp-spoofer?style=for-the-badge)
+[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/eonraider/arp-spoofer?style=for-the-badge)](https://www.codefactor.io/repository/github/eonraider/arp-spoofer)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
 [![Reddit](https://img.shields.io/reddit/user-karma/combined/eonraider?style=flat-square&logo=reddit)](https://www.reddit.com/user/eonraider)
