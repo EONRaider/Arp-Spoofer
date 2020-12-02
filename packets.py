@@ -92,7 +92,7 @@ class ARPSetupProxy(object):
     def __set_interface(self, interface: str) -> str:
         if interface is not None:
             return interface
-        return self._gateway_route['interface']
+        return self.__gateway_route['interface']
 
     def __set_gateway_ip(self, gateway_ip: str) -> str:
         """
@@ -110,8 +110,8 @@ class ARPSetupProxy(object):
     def __set_gateway_mac(self, gateway_mac: str) -> str:
         if gateway_mac is not None:
             return gateway_mac
-        for entry in self.arp_table():
-            if entry['ip_address'] == self._gateway_ip:
+        for entry in self.__net_tables.arp_table:
+            if entry['ip_address'] == self.__gateway_ip:
                 return entry['hw_address']
 
     def __set_target_mac(self, mac_addr: str) -> str:
@@ -125,10 +125,10 @@ class ARPSetupProxy(object):
             return mac_addr
         with socket(AF_INET, SOCK_DGRAM) as sock:
             while True:
-                for entry in self.arp_table():
-                    if entry['ip_address'] == self._target_ip:
+                for entry in self.__net_tables.arp_table:
+                    if entry['ip_address'] == self.__target_ip:
                         return entry['hw_address']
-                sock.sendto(b'', (self._target_ip, randint(49152, 65535)))
+                sock.sendto(b'', (self.__target_ip, randint(49152, 65535)))
                 sleep(2)
 
     def __set_attacker_mac(self, mac_addr: str) -> str:
@@ -139,7 +139,7 @@ class ARPSetupProxy(object):
         """
         if mac_addr is not None:
             return mac_addr
-        if self._disassociate is True:
+        if self.__disassociate is True:
             return self.__randomize_mac_addr()
         with socket(AF_PACKET, SOCK_RAW) as sock:
             sock.bind((self.interface, 0))
