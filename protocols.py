@@ -53,7 +53,7 @@ class Protocol(BigEndianStructure):
     def proto_addr_to_array(proto_addr: str):
         """
         Converts a IPv4 address string in dotted-decimal notation to a
-        c_ubyte array of 6 bytes.
+        c_ubyte array of 4 bytes.
         """
         addr_to_bytes = inet_aton(proto_addr)
         return (c_ubyte * 4)(*addr_to_bytes)
@@ -70,7 +70,7 @@ class Ethernet(Protocol):      # IEEE 802.3 standard
         super().__init__()
         self.dst = self.hdwr_addr_to_array(dst)
         self.src = self.hdwr_addr_to_array(src)
-        self.eth = int(eth)
+        self.eth = eth
 
 
 class ARP(Protocol):           # IETF RFC 826
