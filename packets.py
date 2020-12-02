@@ -5,7 +5,7 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 
 from csv import DictReader
 from random import choices, randint
-from socket import inet_ntoa, socket, AF_INET, AF_PACKET, SOCK_DGRAM, SOCK_RAW
+from socket import inet_ntop, socket, AF_INET, AF_PACKET, SOCK_DGRAM, SOCK_RAW
 from struct import pack
 from time import sleep
 
@@ -129,7 +129,8 @@ class ARPSetupProxy(object):
         """
         if gateway_ip is not None:
             return gateway_ip
-        return inet_ntoa(pack("=L", int(self._gateway_route['gateway'], 16)))
+        return inet_ntop(AF_INET,
+                         pack("=L", int(self.__gateway_route['gateway'], 16)))
 
     def __set_gateway_mac(self, gateway_mac: str) -> str:
         if gateway_mac is not None:
