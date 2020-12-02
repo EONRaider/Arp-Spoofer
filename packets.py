@@ -57,10 +57,6 @@ class ARPSetupProxy(object):
     ports on the target host.
     """
 
-    """A usable route that points to a gateway. Defined at route.h from 
-    Linux Kernel userspace API"""
-    USABLE_ROUTE_GATEWAY = 0x0003
-
     def __init__(self, interface: str, attacker_mac: str, gateway_mac: str,
                  gateway_ip: str, target_mac: str, target_ip: str,
                  disassociate: bool):
@@ -80,14 +76,15 @@ class ARPSetupProxy(object):
                                         self.__target_mac)
 
     def __get_gateway_route(self):
-        try:
-            return next(route for route in self.__net_tables.routing_table if
-                        int(route['flags']) == self.USABLE_ROUTE_GATEWAY)
-        except StopIteration:
-            raise SystemExit('[!] Unable to find a usable route to the default '
-                             'gateway. Check network settings and try again or '
-                             'manually set an interface name from which ARP '
-                             'packets will be sent with the -i argument.')
+        for route in self.__net_tables.routing_table:
+            if int(route['flags']) == 0x0003:
+                """A usable route that points to a gateway. Defined at 
+                route.h from Linux Kernel userspace API."""
+                return route
+        raise SystemExit('[!] Unable to find a usable route to the default '
+                         'gateway. Check network settings and try again or '
+                         'manually set an interface name from which ARP '
+                         'packets will be sent with the -i argument.')
 
     def __set_interface(self, interface: str) -> str:
         if interface is not None:
