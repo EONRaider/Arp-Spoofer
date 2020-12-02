@@ -64,41 +64,20 @@ class ARPSetupProxy(object):
     def __init__(self, interface: str, attacker_mac: str, gateway_mac: str,
                  gateway_ip: str, target_mac: str, target_ip: str,
                  disassociate: bool):
-        self._target_ip = target_ip
-        self._disassociate = disassociate
-        self._gateway_route = self.__get_gateway_route()
+        self.__target_ip = target_ip
+        self.__disassociate = disassociate
+        self.__net_tables = NetworkingTables()
+        self.__gateway_route = self.__get_gateway_route()
         self.interface = self.__set_interface(interface)
-        self._attacker_mac = self.__set_attacker_mac(attacker_mac)
-        self._gateway_ip = self.__set_gateway_ip(gateway_ip)
-        self._gateway_mac = self.__set_gateway_mac(gateway_mac)
-        self._target_mac = self.__set_target_mac(target_mac)
-        self.packets = ARPAttackPackets(self._attacker_mac,
-                                        self._gateway_ip,
-                                        self._gateway_mac,
-                                        self._target_ip,
-                                        self._target_mac)
-
-    @staticmethod
-    def __parse_networking_table(path: str, table_header, delimiter):
-        with open(path, 'r', encoding='utf_8') as table:
-            settings = DictReader(table, fieldnames=table_header,
-                                  skipinitialspace=True, delimiter=delimiter)
-            next(settings)  # Skip header line
-            yield from (line for line in settings)
-
-    def arp_table(self, arp_table_path: str = '/proc/net/arp'):
-        headers = ('ip_address', 'hw_type', 'flags', 'hw_address', 'mask',
-                   'device')
-        return self.__parse_networking_table(path=arp_table_path,
-                                             table_header=headers,
-                                             delimiter=' ')
-
-    def routing_table(self, routing_table_path: str = '/proc/net/route'):
-        headers = ('interface', 'destination', 'gateway', 'flags', 'ref_cnt',
-                   'use', 'metric', 'mask', 'mtu', 'window', 'irtt')
-        return self.__parse_networking_table(path=routing_table_path,
-                                             table_header=headers,
-                                             delimiter='\t')
+        self.__attacker_mac = self.__set_attacker_mac(attacker_mac)
+        self.__gateway_ip = self.__set_gateway_ip(gateway_ip)
+        self.__gateway_mac = self.__set_gateway_mac(gateway_mac)
+        self.__target_mac = self.__set_target_mac(target_mac)
+        self.packets = ARPAttackPackets(self.__attacker_mac,
+                                        self.__gateway_ip,
+                                        self.__gateway_mac,
+                                        self.__target_ip,
+                                        self.__target_mac)
 
     def __get_gateway_route(self):
         """
@@ -183,3 +162,29 @@ class ARPSetupProxy(object):
         Ex: From b'\xceP\x9a\xcc\x8c\x9d' to 'ce:50:9a:cc:8c:9d'
         """
         return ':'.join(format(octet, '02x') for octet in addr)
+
+
+class NetworkingTables(object):
+    @staticmethod
+    def __parse_networking_table(path: str, header: tuple, delimiter: str):
+        with open(path, 'r', encoding='utf_8') as table:
+            settings = DictReader(table, fieldnames=header,
+                                  skipinitialspace=True, delimiter=delimiter)
+            next(settings)  # Skip table header line
+            yield from (line for line in settings)
+
+    @property
+    def arp_table(self, arp_table_path: str = '/proc/net/arp'):
+        headers = ('ip_address', 'hw_type', 'flags', 'hw_address', 'mask',
+                   'device')
+        return self.__parse_networking_table(path=arp_table_path,
+                                             header=headers,
+                                             delimiter=' ')
+
+    @property
+    def routing_table(self, routing_table_path: str = '/proc/net/route'):
+        headers = ('interface', 'destination', 'gateway', 'flags', 'ref_cnt',
+                   'use', 'metric', 'mask', 'mtu', 'window', 'irtt')
+        return self.__parse_networking_table(path=routing_table_path,
+                                             header=headers,
+                                             delimiter='\t')
