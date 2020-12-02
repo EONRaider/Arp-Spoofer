@@ -57,6 +57,10 @@ class ARPSetupProxy(object):
     ports on the target host.
     """
 
+    """A usable route that points to a gateway. Defined at route.h from 
+    Linux Kernel userspace API"""
+    USABLE_ROUTE_GATEWAY = 0x0003
+
     def __init__(self, interface: str, attacker_mac: str, gateway_mac: str,
                  gateway_ip: str, target_mac: str, target_ip: str,
                  disassociate: bool):
@@ -104,8 +108,8 @@ class ARPSetupProxy(object):
         Defined by Linux Kernel userspace API at route.h
         """
         try:
-            return next(route for route in self.routing_table() if
-                        int(route['flags']) == 0x0003)
+            return next(route for route in self.__net_tables.routing_table if
+                        int(route['flags']) == self.USABLE_ROUTE_GATEWAY)
         except StopIteration:
             raise SystemExit('[!] Unable to find usable route to the default '
                              'gateway. Check network settings and try again.')
