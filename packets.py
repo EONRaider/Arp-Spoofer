@@ -80,18 +80,14 @@ class ARPSetupProxy(object):
                                         self.__target_mac)
 
     def __get_gateway_route(self):
-        """
-        Determine the route that leads to the gateway by finding the
-        line that contains the flag 0x0003 in the routing table,
-        indicating a usable route whose destination is a gateway.
-        Defined by Linux Kernel userspace API at route.h
-        """
         try:
             return next(route for route in self.__net_tables.routing_table if
                         int(route['flags']) == self.USABLE_ROUTE_GATEWAY)
         except StopIteration:
-            raise SystemExit('[!] Unable to find usable route to the default '
-                             'gateway. Check network settings and try again.')
+            raise SystemExit('[!] Unable to find a usable route to the default '
+                             'gateway. Check network settings and try again or '
+                             'manually set an interface name from which ARP '
+                             'packets will be sent with the -i argument.')
 
     def __set_interface(self, interface: str) -> str:
         if interface is not None:
