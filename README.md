@@ -103,7 +103,7 @@ optional arguments:
   <tr>
     <td>Outcome</td>
     <td>Automatic configuration and subsequent transmission of spoofed ARP 
-    packets until EOF signal (Ctrl-D)</td>
+    packets until EOF signal (Ctrl-C). Refer to sample output below.</td>
   </tr>
   <tr>
     <td>Observations</td>
@@ -225,8 +225,9 @@ with `0x0003` flag set.
 with `Gateway IP`.
 - `Target MAC`: Send a UDP datagram with an empty byte string to a
 random ephemeral port on the target system (effectively making the
-attacker system execute an ARP request to the broadcast address)
-and then reading the newly written information from the ARP table.
+attacker system execute an ARP request followed by an ICMP probe
+to the broadcast address) and then reading the newly written
+information from the ARP table.
 
 ## Legal Disclaimer
 
