@@ -76,10 +76,11 @@ class ARPSetupProxy(object):
                                         self.__target_mac)
 
     def __get_gateway_route(self):
+        """Gets a usable route that points to a gateway from the
+        routing table. The value 0x0003 is defined at route.h in the
+        Linux Kernel userspace API."""
         for route in self.__net_tables.routing_table:
             if int(route['flags']) == 0x0003:
-                """A usable route that points to a gateway. Defined at 
-                route.h from Linux Kernel userspace API."""
                 return route
         raise SystemExit('[!] Unable to find a usable route to the default '
                          'gateway. Check network settings and try again or '
