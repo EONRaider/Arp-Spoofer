@@ -79,6 +79,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
                     'Spoofing") on local networks.')
+    options = parser.add_mutually_exclusive_group()
     parser.add_argument('targetip', type=str, metavar='TARGET_IP',
                         help='IP address currently assigned to the target.')
     parser.add_argument('-i', '--interface', type=str,
@@ -97,18 +98,18 @@ if __name__ == '__main__':
     parser.add_argument('--interval', type=float, default=1, metavar='TIME',
                         help='Time in between each transmission of spoofed ARP '
                              'packets (defaults to 1 second).')
-    parser.add_argument('-d', '--disassociate', action='store_true',
-                        help='Execute a disassociation attack in which a '
-                             'randomized MAC address is set for the attacker '
-                             'machine, effectively making the target host send '
-                             'packets to a non-existent gateway.')
-    parser.add_argument('-f', '--ipforward', action='store_true',
-                        help='Temporarily enable forwarding of IPv4 packets on '
-                             'the attacker system until the next reboot. '
-                             'Set this to intercept information between the '
-                             'target host and the gateway, performing a '
-                             'man-in-the-middle attack. Requires administrator '
-                             'privileges.')
+    options.add_argument('-d', '--disassociate', action='store_true',
+                         help='Execute a disassociation attack in which a '
+                              'randomized MAC address is set for the attacker '
+                              'machine, effectively making the target host '
+                              'send packets to a non-existent gateway.')
+    options.add_argument('-f', '--ipforward', action='store_true',
+                         help='Temporarily enable forwarding of IPv4 packets '
+                              'on the attacker system until the next reboot. '
+                              'Set this to intercept information between the '
+                              'target host and the gateway, performing a '
+                              'man-in-the-middle attack. Requires '
+                              'administrator privileges.')
     cli_args = parser.parse_args()
 
     spoofer = Spoofer(interface=cli_args.interface,
