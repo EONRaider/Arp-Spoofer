@@ -27,7 +27,7 @@ user@host:~/DIR$ git clone https://github.com/EONRaider/Arp-Spoofer.git
 ## Usage
 ```
 arpspoof.py [-h] [-i INTERFACE] [--attackermac MAC] [--gatemac MAC]
-            [--targetmac MAC] [--gateip IP] [--interval TIME] [-d] [-f]
+            [--targetmac MAC] [--gateip IP] [--interval TIME] [-d | -f]
             TARGET_IP
 
 Execute ARP Cache Poisoning attacks (a.k.a "ARP Spoofing") on local networks.
