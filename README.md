@@ -2,12 +2,12 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.x-blue?style=for-the-badge&logo=python)
 ![OS](https://img.shields.io/badge/OS-GNU%2FLinux-red?style=for-the-badge&logo=linux)
-[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/eonraider/arp-spoofer?style=for-the-badge)](https://www.codefactor.io/repository/github/eonraider/arp-spoofer)
+[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/EONRaider/Arp-Spoofer?label=CodeFactor&logo=codefactor&style=for-the-badge)](https://www.codefactor.io/repository/github/eonraider/arp-spoofer)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
-[![Reddit](https://img.shields.io/reddit/user-karma/combined/eonraider?style=flat-square&logo=reddit)](https://www.reddit.com/user/eonraider)
-[![GitHub](https://img.shields.io/github/followers/eonraider?label=GitHub&logo=github&style=flat-square)](https://github.com/EONRaider)
-[![Twitter](https://img.shields.io/twitter/follow/eon_raider?style=flat-square&logo=twitter)](https://twitter.com/intent/follow?screen_name=eon_raider)
+[![Reddit](https://img.shields.io/badge/Reddit-EONRaider-FF4500?style=flat-square&logo=reddit)](https://www.reddit.com/user/eonraider)
+[![Discord](https://img.shields.io/badge/Discord-EONRaider-7289DA?style=flat-square&logo=discord)](https://discord.gg/KVjWBptv)
+[![Twitter](https://img.shields.io/badge/Twitter-eon__raider-38A1F3?style=flat-square&logo=twitter)](https://twitter.com/intent/follow?screen_name=eon_raider)
 
 A pure-Python ARP Cache Poisoning (a.k.a. "ARP Spoofing") tool that leverages
 a low-level assembly of Ethernet II frames and ARP packets.
@@ -218,7 +218,7 @@ executed by the application to obtain each setting:**
 `net.ipv4.ip_forward=1` in `sysctl`
 - `Interface`: Parse the attacker's routing table and look for
 interfaces mapping valid routes to the gateway.
-- `Attacker MAC`: Bind to interface and query name from `socket`
+- `Attacker MAC`: Bind to interface and query its name from `socket`
 - `Gateway IP`: Parse the attacker's routing table and find the route
 with `0x0003` flag set.
 - `Gateway MAC`: Parse the attacker's ARP table looking for devices
