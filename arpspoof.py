@@ -39,6 +39,9 @@ class Spoofer(object):
             try:
                 check_call(["/usr/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
                            stdout=DEVNULL, stderr=DEVNULL)
+            except FileNotFoundError:
+                check_call(["/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
+                           stdout=DEVNULL, stderr=DEVNULL)
             except CalledProcessError:
                 raise SystemExit('Error: Permission denied. Execute with '
                                  'administrator privileges.')
