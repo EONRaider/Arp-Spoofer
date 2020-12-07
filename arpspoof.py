@@ -6,7 +6,8 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 import argparse
 import time
 from socket import htons, ntohs, socket, PF_PACKET, SOCK_RAW
-from subprocess import CalledProcessError, check_call, DEVNULL
+from subprocess import CalledProcessError, check_call, DEVNULL, run, PIPE
+
 
 from packets import ARPSetupProxy
 
@@ -36,11 +37,9 @@ class Spoofer(object):
         attempt to guarantee compatibility with all Python 3.x
         interpreters"""
         if self.__ipv4_forwarding is True:
+            sysctl_location = run(['which', 'sysctl'], stdout=PIPE).stdout.decode('utf-8').rstrip()
             try:
-                check_call(["/usr/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
-                           stdout=DEVNULL, stderr=DEVNULL)
-            except FileNotFoundError:
-                check_call(["/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
+                check_call([sysctl_location, "-w", "net.ipv4.ip_forward=1"],
                            stdout=DEVNULL, stderr=DEVNULL)
             except CalledProcessError:
                 raise SystemExit('Error: Permission denied. Execute with '
