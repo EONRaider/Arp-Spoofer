@@ -37,7 +37,7 @@ class Spoofer(object):
         attempt to guarantee compatibility with all Python 3.x
         interpreters"""
         if self.__ipv4_forwarding is True:
-            sysctl_location = run(['which', 'sysctl'], stdout=PIPE).stdout.decode('utf-8').rstrip()
+            sysctl_location = run(['/usr/bin/which', 'sysctl'], stdout=PIPE).stdout.decode('utf-8').rstrip()
             try:
                 check_call([sysctl_location, "-w", "net.ipv4.ip_forward=1"],
                            stdout=DEVNULL, stderr=DEVNULL)
