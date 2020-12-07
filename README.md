@@ -214,8 +214,8 @@ going through all the manual processes required by similar tools.
 
 With that in mind we have that **the following operations are the ones 
 executed by the application to obtain each setting:**
-- `IPv4 Forwarding`: Execute a subprocess call to set
-`net.ipv4.ip_forward=1` in `sysctl`
+- `IPv4 Forwarding`: Execute an overwriting of the value 0 to 1 in the
+  file `/proc/sys/net/ipv4/ip_forward`.
 - `Interface`: Parse the attacker's routing table and look for
 interfaces mapping valid routes to the gateway.
 - `Attacker MAC`: Bind to interface and query its name from `socket`
