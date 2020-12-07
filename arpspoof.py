@@ -12,15 +12,13 @@ from packets import ARPSetupProxy
 
 
 class Spoofer(object):
-    def __init__(self, *, interface: str, attacker_mac: str,
-                 gateway_mac: str, gateway_ip: str,
-                 target_mac: str, target_ip: str,
-                 interval: float, disassociate: bool,
-                 ipv4_forwarding: bool):
+    def __init__(self, *, interface: str, attackermac: str,
+                 gatewaymac: str, gatewayip: str, targetmac: str, targetip: str,
+                 interval: float, disassociate: bool, ipforward: bool):
         self.__interval = interval
-        self.__ipv4_forwarding = ipv4_forwarding
-        self.__arp = ARPSetupProxy(interface, attacker_mac, gateway_mac,
-                                   gateway_ip, target_mac, target_ip,
+        self.__ipv4_forwarding = ipforward
+        self.__arp = ARPSetupProxy(interface, attackermac, gatewaymac,
+                                   gatewayip, targetmac, targetip,
                                    disassociate)
 
     def execute(self):
@@ -88,12 +86,12 @@ if __name__ == '__main__':
     parser.add_argument('--attackermac', type=str, metavar='MAC',
                         help='MAC address of the NIC from which the attacker '
                              'machine will send the spoofed ARP packets.')
-    parser.add_argument('--gatemac', type=str, metavar='MAC',
+    parser.add_argument('--gatewaymac', type=str, metavar='MAC',
                         help='MAC address of the NIC associated to the '
                              'gateway.')
     parser.add_argument('--targetmac', type=str, metavar='MAC',
                         help='MAC address of the NIC associated to the target.')
-    parser.add_argument('--gateip', type=str, metavar='IP',
+    parser.add_argument('--gatewayip', type=str, metavar='IP',
                         help='IP address currently assigned to the gateway.')
     parser.add_argument('--interval', type=float, default=1, metavar='TIME',
                         help='Time in between each transmission of spoofed ARP '
@@ -111,14 +109,5 @@ if __name__ == '__main__':
                               'man-in-the-middle attack. Requires '
                               'administrator privileges.')
     cli_args = parser.parse_args()
-
-    spoofer = Spoofer(interface=cli_args.interface,
-                      attacker_mac=cli_args.attackermac,
-                      gateway_mac=cli_args.gatemac,
-                      gateway_ip=cli_args.gateip,
-                      target_mac=cli_args.targetmac,
-                      target_ip=cli_args.targetip,
-                      interval=cli_args.interval,
-                      disassociate=cli_args.disassociate,
-                      ipv4_forwarding=cli_args.ipforward)
+    spoofer = Spoofer(**vars(cli_args))
     spoofer.execute()
