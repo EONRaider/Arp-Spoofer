@@ -4,6 +4,7 @@
 __author__ = 'EONRaider @ keybase.io/eonraider'
 
 import argparse
+import os
 import time
 from socket import htons, ntohs, socket, PF_PACKET, SOCK_RAW
 
@@ -68,6 +69,10 @@ class Spoofer(object):
 
 
 if __name__ == '__main__':
+    if os.getuid() != 0:
+        raise SystemExit('Error: Permission denied. Execute this application '
+                         'with administrator privileges.')
+
     parser = argparse.ArgumentParser(
         description='Execute ARP Cache Poisoning attacks (a.k.a "ARP '
                     'Spoofing") on local networks.')
