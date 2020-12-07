@@ -6,7 +6,6 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 import argparse
 import time
 from socket import htons, ntohs, socket, PF_PACKET, SOCK_RAW
-from subprocess import CalledProcessError, check_call, DEVNULL
 
 from packets import ARPSetupProxy
 
@@ -29,17 +28,12 @@ class Spoofer(object):
         except KeyboardInterrupt:
             raise SystemExit('[!] ARP Spoofing attack aborted.')
 
-    def __check_ipv4_forwarding(self):
-        """subprocess.check_call is used in preference to 'run' as an
-        attempt to guarantee compatibility with all Python 3.x
-        interpreters"""
+    def __check_ipv4_forwarding(self, config='/proc/sys/net/ipv4/ip_forward'):
         if self.__ipv4_forwarding is True:
-            try:
-                check_call(["/usr/sbin/sysctl", "-w", "net.ipv4.ip_forward=1"],
-                           stdout=DEVNULL, stderr=DEVNULL)
-            except CalledProcessError:
-                raise SystemExit('Error: Permission denied. Execute with '
-                                 'administrator privileges.')
+            with open(config, mode='r+', encoding='utf_8') as config_file:
+                line = next(config_file)
+                config_file.seek(0)
+                config_file.write(line.replace('0', '1'))
 
     def __display_setup_prompt(self):
         print('\n[>>>] ARP Spoofing configuration:')
