@@ -12,13 +12,15 @@ from socket import inet_aton
 
 class Packet(object):
     def __init__(self, *protocols):
-        valid_protocols = (cls.__name__ for cls in Protocol.__subclasses__())
         for protocol in protocols:
-            protocol_name = protocol.__class__.__name__
-            if protocol_name not in valid_protocols:
-                raise AttributeError('Cannot build packet. Invalid protocol: {}'
-                                     .format(protocol_name))
-            setattr(self, protocol_name.lower(), protocol)
+            setattr(self, protocol.__class__.__name__, protocol)
+
+    def __setattr__(self, protocol_name, protocol_class):
+        valid_protocols = (cls.__name__ for cls in Protocol.__subclasses__())
+        if protocol_name not in valid_protocols:
+            raise AttributeError('Cannot build packet. Invalid protocol: {}'
+                                 .format(protocol_name))
+        super().__setattr__(protocol_name.lower(), protocol_class)
 
     def __bytes__(self):
         return b''.join(proto for proto in self.__dict__.values())
@@ -52,7 +54,7 @@ class Protocol(BigEndianStructure):
     @staticmethod
     def proto_addr_to_array(proto_addr: str):
         """
-        Converts a IPv4 address string in dotted-decimal notation to a
+        Converts an IPv4 address string in dotted-decimal notation to a
         c_ubyte array of 4 bytes.
         """
         addr_to_bytes = inet_aton(proto_addr)
@@ -79,7 +81,7 @@ class ARP(Protocol):           # IETF RFC 826
         ("ptype", c_uint16),   # Protocol type
         ("hlen", c_uint8),     # Hardware length
         ("plen", c_uint8),     # Protocol length
-        ("oper", c_uint16),    # Operation
+        ("oper", c_uint16),    # Operation code
         ("sha", c_ubyte * 6),  # Sender hardware address
         ("spa", c_ubyte * 4),  # Sender protocol address
         ("tha", c_ubyte * 6),  # Target hardware address
