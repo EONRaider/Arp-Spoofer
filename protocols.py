@@ -7,7 +7,7 @@ __author__ = 'EONRaider @ keybase.io/eonraider'
 import re
 from ctypes import BigEndianStructure, create_string_buffer, c_ubyte, c_uint8, \
     c_uint16, sizeof
-from socket import inet_aton
+from socket import inet_pton, AF_INET
 
 
 class Packet(object):
@@ -57,7 +57,7 @@ class Protocol(BigEndianStructure):
         Converts an IPv4 address string in dotted-decimal notation to a
         c_ubyte array of 4 bytes.
         """
-        addr_to_bytes = inet_aton(proto_addr)
+        addr_to_bytes = inet_pton(AF_INET, proto_addr)
         return (c_ubyte * 4)(*addr_to_bytes)
 
 
