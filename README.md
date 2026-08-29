@@ -5,9 +5,8 @@
 [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/EONRaider/Arp-Spoofer?label=CodeFactor&logo=codefactor&style=for-the-badge)](https://www.codefactor.io/repository/github/eonraider/arp-spoofer)
 [![License](https://img.shields.io/github/license/EONRaider/Packet-Sniffer?style=for-the-badge)](https://github.com/EONRaider/Packet-Sniffer/blob/master/LICENSE)
 
-[![Reddit](https://img.shields.io/badge/Reddit-EONRaider-FF4500?style=flat-square&logo=reddit)](https://www.reddit.com/user/eonraider)
+[![Reddit](https://img.shields.io/badge/Reddit-EON__Raider-FF4500?style=flat-square&logo=reddit)](https://www.reddit.com/user/EON_Raider)
 [![Discord](https://img.shields.io/badge/Discord-EONRaider-7289DA?style=flat-square&logo=discord)](https://discord.gg/KVjWBptv)
-[![Twitter](https://img.shields.io/badge/Twitter-eon__raider-38A1F3?style=flat-square&logo=twitter)](https://twitter.com/intent/follow?screen_name=eon_raider)
 
 A pure-Python ARP Cache Poisoning (a.k.a. "ARP Spoofing") tool that leverages
 a low-level assembly of Ethernet II frames and ARP packets.
